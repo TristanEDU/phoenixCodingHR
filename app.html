@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Phoenix HR - Dashboard</title>
+		<link rel="stylesheet" href="designs/style.css/style.css" />
+	</head>
+	<body class="app-body">
+		<!-- App Shell -->
+		<div class="app-shell">
+			<!-- Sidebar Navigation -->
+			<aside class="sidebar" id="sidebar">
+				<div class="sidebar-header">
+					<h1 class="app-logo">Phoenix HR</h1>
+					<button
+						class="sidebar-toggle"
+						id="sidebarToggle"
+						aria-label="Toggle sidebar"
+					>
+						<span class="hamburger"></span>
+					</button>
+				</div>
+
+				<nav class="sidebar-nav" aria-label="Main navigation">
+					<ul class="nav-list">
+						<li>
+							<a
+								href="#dashboard"
+								class="nav-item active"
+								data-view="dashboard"
+							>
+								<span class="nav-icon">📊</span>
+								<span class="nav-text">Dashboard</span>
+							</a>
+						</li>
+						<li>
+							<a href="#projects" class="nav-item" data-view="projects">
+								<span class="nav-icon">📋</span>
+								<span class="nav-text">Projects</span>
+							</a>
+						</li>
+						<li>
+							<a href="#tasks" class="nav-item" data-view="tasks">
+								<span class="nav-icon">✅</span>
+								<span class="nav-text">Tasks</span>
+							</a>
+						</li>
+						<li>
+							<a href="#people" class="nav-item" data-view="people">
+								<span class="nav-icon">👥</span>
+								<span class="nav-text">People</span>
+							</a>
+						</li>
+						<li>
+							<a href="#calendar" class="nav-item" data-view="calendar">
+								<span class="nav-icon">📅</span>
+								<span class="nav-text">Calendar</span>
+							</a>
+						</li>
+						<li>
+							<a href="#documents" class="nav-item" data-view="documents">
+								<span class="nav-icon">📄</span>
+								<span class="nav-text">Documents</span>
+							</a>
+						</li>
+						<li>
+							<a href="#reports" class="nav-item" data-view="reports">
+								<span class="nav-icon">📈</span>
+								<span class="nav-text">Reports</span>
+							</a>
+						</li>
+					</ul>
+
+					<div class="sidebar-footer">
+						<div class="user-profile">
+							<div class="user-avatar">👤</div>
+							<div class="user-info">
+								<div class="user-name">Admin User</div>
+								<div class="user-role">HR Manager</div>
+							</div>
+						</div>
+					</div>
+				</nav>
+			</aside>
+
+			<!-- Main Content Area -->
+			<main class="main-content" id="mainContent">
+				<!-- Top Bar -->
+				<header class="topbar">
+					<div class="topbar-left">
+						<button
+							class="mobile-menu-btn"
+							id="mobileMenuBtn"
+							aria-label="Open menu"
+						>
+							<span class="hamburger"></span>
+						</button>
+						<h2 class="page-title" id="pageTitle">Dashboard</h2>
+					</div>
+					<div class="topbar-right">
+						<button class="btn btn-primary">+ New Task</button>
+						<button class="notification-btn" aria-label="Notifications">
+							<span class="notification-icon">🔔</span>
+							<span class="notification-badge">3</span>
+						</button>
+					</div>
+				</header>
+
+				<!-- Dynamic Content Views -->
+				<div class="content-area" id="contentArea">
+					<!-- Dashboard View (default) -->
+					<div class="view dashboard-view active" id="dashboard-view">
+						<div class="dashboard-grid">
+							<div class="dashboard-card">
+								<h3>Quick Stats</h3>
+								<div class="stats-row">
+									<div class="stat">
+										<div class="stat-number">24</div>
+										<div class="stat-label">Active Tasks</div>
+									</div>
+									<div class="stat">
+										<div class="stat-number">8</div>
+										<div class="stat-label">Open Positions</div>
+									</div>
+									<div class="stat">
+										<div class="stat-number">142</div>
+										<div class="stat-label">Employees</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="dashboard-card">
+								<h3>Recent Activity</h3>
+								<div class="activity-feed">
+									<div class="activity-item">
+										<span class="activity-icon">✅</span>
+										<span class="activity-text"
+											>New hire onboarding completed for John Doe</span
+										>
+										<span class="activity-time">2 hours ago</span>
+									</div>
+									<div class="activity-item">
+										<span class="activity-icon">📋</span>
+										<span class="activity-text"
+											>Job posting created: Senior Developer</span
+										>
+										<span class="activity-time">4 hours ago</span>
+									</div>
+									<div class="activity-item">
+										<span class="activity-icon">👥</span>
+										<span class="activity-text"
+											>Employee profile updated: Jane Smith</span
+										>
+										<span class="activity-time">1 day ago</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="dashboard-card">
+								<h3>Upcoming Events</h3>
+								<div class="events-list">
+									<div class="event-item">
+										<div class="event-date">Nov 5</div>
+										<div class="event-info">
+											<div class="event-title">Team Meeting</div>
+											<div class="event-time">2:00 PM</div>
+										</div>
+									</div>
+									<div class="event-item">
+										<div class="event-date">Nov 8</div>
+										<div class="event-info">
+											<div class="event-title">
+												Interview: Software Engineer
+											</div>
+											<div class="event-time">10:00 AM</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Projects View -->
+					<div class="view projects-view" id="projects-view">
+						<div class="view-header">
+							<h3>HR Projects</h3>
+							<button class="btn btn-primary">+ New Project</button>
+						</div>
+						<div class="projects-grid">
+							<div class="project-card">
+								<h4>Q4 Hiring Campaign</h4>
+								<p>Recruit 5 new developers for expansion</p>
+								<div class="project-meta">
+									<span class="project-status status-active">Active</span>
+									<span class="project-progress">60% complete</span>
+								</div>
+							</div>
+							<div class="project-card">
+								<h4>Employee Handbook Update</h4>
+								<p>Revise policies and procedures</p>
+								<div class="project-meta">
+									<span class="project-status status-planning">Planning</span>
+									<span class="project-progress">20% complete</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tasks View -->
+					<div class="view tasks-view" id="tasks-view">
+						<div class="view-header">
+							<h3>Tasks</h3>
+							<div class="view-controls">
+								<button class="view-toggle active" data-view-type="list">
+									List
+								</button>
+								<button class="view-toggle" data-view-type="board">
+									Board
+								</button>
+								<button class="btn btn-primary">+ New Task</button>
+							</div>
+						</div>
+						<div class="tasks-container">
+							<div class="task-item">
+								<div class="task-checkbox"></div>
+								<div class="task-content">
+									<div class="task-title">Review candidate applications</div>
+									<div class="task-meta">
+										<span class="task-assignee">Assigned to: Sarah</span>
+										<span class="task-due">Due: Nov 6</span>
+									</div>
+								</div>
+								<div class="task-priority priority-high">High</div>
+							</div>
+							<div class="task-item">
+								<div class="task-checkbox"></div>
+								<div class="task-content">
+									<div class="task-title">Update job descriptions</div>
+									<div class="task-meta">
+										<span class="task-assignee">Assigned to: Mike</span>
+										<span class="task-due">Due: Nov 10</span>
+									</div>
+								</div>
+								<div class="task-priority priority-medium">Medium</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- People View -->
+					<div class="view people-view" id="people-view">
+						<div class="view-header">
+							<h3>People Directory</h3>
+							<button class="btn btn-primary">+ Add Employee</button>
+						</div>
+						<div class="people-grid">
+							<div class="person-card">
+								<div class="person-avatar">👤</div>
+								<div class="person-info">
+									<h4>John Doe</h4>
+									<p>Software Engineer</p>
+									<div class="person-meta">Engineering • Full-time</div>
+								</div>
+							</div>
+							<div class="person-card">
+								<div class="person-avatar">👤</div>
+								<div class="person-info">
+									<h4>Jane Smith</h4>
+									<p>Product Manager</p>
+									<div class="person-meta">Product • Full-time</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Other views (placeholder) -->
+					<div class="view calendar-view" id="calendar-view">
+						<h3>Calendar View</h3>
+						<p>Calendar functionality coming soon...</p>
+					</div>
+
+					<div class="view documents-view" id="documents-view">
+						<h3>Documents</h3>
+						<p>Document management coming soon...</p>
+					</div>
+
+					<div class="view reports-view" id="reports-view">
+						<h3>Reports & Analytics</h3>
+						<p>Reporting dashboard coming soon...</p>
+					</div>
+				</div>
+			</main>
+		</div>
+
+		<script type="module" src="src/app.js"></script>
+	</body>
+</html>

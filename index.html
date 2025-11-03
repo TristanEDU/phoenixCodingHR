@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Phoenix Coding HR</title>
+		<link rel="stylesheet" href="designs/style.css/style.css" />
+	</head>
+	<body>
+		<h1 class="pageTitle">Phoenix Coding</h1>
+		<nav class="navigationBar" aria-label="Primary">
+			<a href="#" class="navButton">Home</a>
+			<a href="#features" class="navButton">Features</a>
+			<a href="signup.html" class="navButton">Sign up</a>
+			<a href="app.html" class="navButton login-btn">Login</a>
+		</nav>
+		<section class="hero" role="banner" aria-labelledby="hero-title">
+			<div class="container">
+				<h2 id="hero-title">People‑first HR software for small teams</h2>
+				<p class="lead">
+					Manage hiring, onboarding, time off, and performance in one simple app
+					— designed to keep your team productive and engaged.
+				</p>
+				<div class="cta">
+					<a class="btn primary" href="signup.html">Get started — free</a>
+					<a class="btn" href="#features">See features</a>
+					<a class="btn login-btn" href="app.html">Login to Dashboard</a>
+				</div>
+			</div>
+		</section>
+
+		<section id="features" class="features" aria-labelledby="features-title">
+			<div class="container">
+				<h3 id="features-title">Core features</h3>
+				<div class="feature-grid">
+					<article class="feature-card" aria-labelledby="f1">
+						<div class="icon" aria-hidden="true">🧾</div>
+						<h4 id="f1">Applicant tracking</h4>
+						<p>
+							Post jobs, review candidates, and move hires through stages with a
+							single pipeline.
+						</p>
+					</article>
+
+					<article class="feature-card" aria-labelledby="f2">
+						<div class="icon" aria-hidden="true">🛠️</div>
+						<h4 id="f2">Onboarding & Offboarding</h4>
+						<p>
+							Create checklists, assign tasks, and automate paperwork so new
+							hires ramp faster.
+						</p>
+					</article>
+
+					<article class="feature-card" aria-labelledby="f3">
+						<div class="icon" aria-hidden="true">📅</div>
+						<h4 id="f3">Time & absence</h4>
+						<p>
+							Request and approve time off, track absences, and sync with your
+							calendar.
+						</p>
+					</article>
+				</div>
+			</div>
+		</section>
+
+		<section class="stats" aria-label="Key metrics">
+			<div class="container">
+				<ul class="stats-list">
+					<li><strong>500+</strong><span>Employees managed</span></li>
+					<li><strong>40%</strong><span>Average time saved</span></li>
+					<li><strong>20+</strong><span>Integrations</span></li>
+				</ul>
+			</div>
+		</section>
+
+		<section class="signup" aria-labelledby="signup-title">
+			<div class="container">
+				<h4 id="signup-title">Try Phoenix Coding HR</h4>
+				<p>Start a free trial — no credit card required.</p>
+				<form action="signup.html" method="get" class="signup-form" novalidate>
+					<label for="email" class="visually-hidden">Email</label>
+					<input
+						id="email"
+						name="email"
+						type="email"
+						placeholder="Your work email"
+						required
+					/>
+					<button type="submit" class="btn primary">Start free trial</button>
+				</form>
+			</div>
+		</section>
+
+		<footer class="site-footer" role="contentinfo">
+			<div class="container">
+				<nav aria-label="Footer">
+					<a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> ·
+					<a href="contact.html">Contact</a>
+				</nav>
+				<p>&copy; <span id="year"></span> Phoenix Coding — HR made simple</p>
+			</div>
+		</footer>
+
+		<script>
+			// Small helper to keep footer year current
+			document
+				.getElementById("year")
+				?.replaceWith(document.createTextNode(new Date().getFullYear()));
+		</script>
+		<script type="module" src="src/main.js"></script>
+	</body>
+</html>
