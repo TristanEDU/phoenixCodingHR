@@ -10,20 +10,56 @@ class PhoenixHRApp {
 			dashboards: true,
 			spaces: true,
 		};
-		this.dashboards = [
+
+		// Load dashboards from localStorage or use defaults
+		this.dashboards = this.loadDashboards();
+		this.init();
+	}
+
+	// Dashboard persistence methods
+	loadDashboards() {
+		try {
+			const saved = localStorage.getItem("phoenix-hr-dashboards");
+			if (saved) {
+				const dashboards = JSON.parse(saved);
+				console.log("Loaded dashboards from localStorage:", dashboards);
+				return dashboards;
+			}
+		} catch (error) {
+			console.warn("Failed to load dashboards from localStorage:", error);
+		}
+
+		// Return default dashboards if nothing saved or error occurred
+		return [
 			{ id: "dashboard", name: "Overview", icon: "📊" },
 			{ id: "projects", name: "HR Projects", icon: "📋" },
 			{ id: "reports", name: "Analytics", icon: "📈" },
 		];
-		this.init();
+	}
+
+	saveDashboards() {
+		try {
+			localStorage.setItem(
+				"phoenix-hr-dashboards",
+				JSON.stringify(this.dashboards)
+			);
+			console.log("Dashboards saved to localStorage");
+		} catch (error) {
+			console.warn("Failed to save dashboards to localStorage:", error);
+		}
 	}
 
 	init() {
 		console.log("PhoenixHRApp initializing...");
+
+		// Initialize authentication and user info
+		this.initializeUser();
+
 		this.bindEvents();
 		this.handleInitialRoute();
 		this.updatePageTitle();
 		this.initializeSectionStates();
+		this.initializeSavedDashboards();
 		console.log("PhoenixHRApp initialized successfully!");
 	}
 
@@ -146,6 +182,129 @@ class PhoenixHRApp {
 				}
 			}
 		});
+	}
+
+	initializeSavedDashboards() {
+		// Create views and sidebar entries for any custom dashboards that don't have the default IDs
+		const defaultIds = ["dashboard", "projects", "reports"];
+		const customDashboards = this.dashboards.filter(
+			(d) => !defaultIds.includes(d.id)
+		);
+
+		customDashboards.forEach((dashboard) => {
+			// Create the dashboard view
+			this.createDashboardView(dashboard);
+
+			// Add to sidebar navigation
+			this.addDashboardToSidebar(dashboard);
+		});
+
+		console.log(
+			`Initialized ${customDashboards.length} saved custom dashboards`
+		);
+	}
+
+	// Authentication and User Management Methods
+	initializeUser() {
+		if (!window.authSystem) {
+			console.error("AuthSystem not available");
+			return;
+		}
+
+		// Check if user is authenticated
+		if (!window.authSystem.isAuthenticated()) {
+			console.log("User not authenticated, redirecting to login");
+			window.location.href = "login.html";
+			return;
+		}
+
+		// Get current user and update UI
+		const user = window.authSystem.getCurrentUser();
+		if (user) {
+			this.updateUserInterface(user);
+			this.bindUserMenuEvents();
+		}
+
+		console.log("User initialized:", user?.name);
+	}
+
+	updateUserInterface(user) {
+		// Update user info in topbar
+		const userInfo = document.getElementById("userInfo");
+		const userDetails = document.getElementById("userDetails");
+
+		if (userInfo) {
+			userInfo.innerHTML = `
+				<span class="user-name">${user.name}</span>
+				<span class="user-role">${user.role}</span>
+			`;
+		}
+
+		if (userDetails) {
+			userDetails.innerHTML = `
+				<div class="user-name">${user.name}</div>
+				<div class="user-email">${user.email}</div>
+			`;
+		}
+	}
+
+	bindUserMenuEvents() {
+		// User menu toggle
+		const userMenuBtn = document.getElementById("userMenuBtn");
+		const userDropdown = document.getElementById("userDropdown");
+
+		if (userMenuBtn && userDropdown) {
+			userMenuBtn.addEventListener("click", (e) => {
+				e.stopPropagation();
+				this.toggleUserMenu();
+			});
+
+			// Close dropdown when clicking outside
+			document.addEventListener("click", (e) => {
+				if (
+					!userMenuBtn.contains(e.target) &&
+					!userDropdown.contains(e.target)
+				) {
+					this.closeUserMenu();
+				}
+			});
+		}
+
+		// Logout button
+		const logoutBtn = document.getElementById("logoutBtn");
+		if (logoutBtn) {
+			logoutBtn.addEventListener("click", (e) => {
+				e.preventDefault();
+				this.handleLogout();
+			});
+		}
+	}
+
+	toggleUserMenu() {
+		const userDropdown = document.getElementById("userDropdown");
+		if (userDropdown) {
+			const isVisible = userDropdown.style.display !== "none";
+			userDropdown.style.display = isVisible ? "none" : "block";
+		}
+	}
+
+	closeUserMenu() {
+		const userDropdown = document.getElementById("userDropdown");
+		if (userDropdown) {
+			userDropdown.style.display = "none";
+		}
+	}
+
+	handleLogout() {
+		if (confirm("Are you sure you want to sign out?")) {
+			console.log("User logging out...");
+			if (window.authSystem) {
+				window.authSystem.logout();
+			} else {
+				// Fallback if authSystem not available
+				window.location.href = "login.html";
+			}
+		}
 	}
 
 	toggleSection(sectionName) {
@@ -320,12 +479,6 @@ class PhoenixHRApp {
 		// Close modal
 		this.closeModal();
 
-		// Show success notification
-		this.showNotification(
-			`Created dashboard: ${dashboardData.name}`,
-			"success"
-		);
-
 		// Navigate to new dashboard
 		this.navigateToView(dashboardData.id);
 	}
@@ -333,6 +486,9 @@ class PhoenixHRApp {
 	createDashboard(dashboardData) {
 		// Add to dashboards array
 		this.dashboards.push(dashboardData);
+
+		// Save to localStorage
+		this.saveDashboards();
 
 		// Create the HTML view for this dashboard
 		this.createDashboardView(dashboardData);
@@ -640,6 +796,8 @@ class PhoenixHRApp {
 			const dashboard = this.dashboards.find((d) => d.id === itemView);
 			if (dashboard) {
 				dashboard.name = newName.trim();
+				// Save to localStorage after rename
+				this.saveDashboards();
 			}
 
 			this.showNotification(`Renamed to "${newName.trim()}"`, "success");
@@ -719,6 +877,9 @@ class PhoenixHRApp {
 			);
 			if (dashboardIndex !== -1) {
 				this.dashboards.splice(dashboardIndex, 1);
+
+				// Save to localStorage after deletion
+				this.saveDashboards();
 
 				// Remove the dashboard view from DOM
 				const dashboardView = document.getElementById(`${itemView}-view`);
@@ -909,11 +1070,6 @@ class PhoenixHRApp {
 	openModal(modalId) {
 		// Modal management
 		console.log(`Opening modal: ${modalId}`);
-	}
-
-	closeModal(modalId) {
-		// Modal management
-		console.log(`Closing modal: ${modalId}`);
 	}
 }
 

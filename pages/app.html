@@ -4,7 +4,7 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Phoenix HR - Dashboard</title>
-		<link rel="stylesheet" href="designs/style.css/style.css" />
+		<link rel="stylesheet" href="../designs/style.css/style.css" />
 	</head>
 	<body class="app-body">
 		<!-- App Shell -->
@@ -185,6 +185,43 @@
 							<span class="notification-icon">🔔</span>
 							<span class="notification-badge">3</span>
 						</button>
+						<div class="user-menu">
+							<button class="user-menu-btn" id="userMenuBtn">
+								<div class="user-avatar">👤</div>
+								<div class="user-info" id="userInfo">
+									<span class="user-name">Loading...</span>
+									<span class="user-role">User</span>
+								</div>
+								<span class="dropdown-arrow">⌄</span>
+							</button>
+							<div
+								class="user-dropdown"
+								id="userDropdown"
+								style="display: none"
+							>
+								<div class="dropdown-header">
+									<div class="user-avatar large">👤</div>
+									<div class="user-details" id="userDetails">
+										<div class="user-name">Loading...</div>
+										<div class="user-email">user@company.com</div>
+									</div>
+								</div>
+								<div class="dropdown-divider"></div>
+								<a href="#" class="dropdown-item">
+									<span class="item-icon">⚙️</span>
+									Account Settings
+								</a>
+								<a href="#" class="dropdown-item">
+									<span class="item-icon">🔧</span>
+									Preferences
+								</a>
+								<div class="dropdown-divider"></div>
+								<button class="dropdown-item logout-btn" id="logoutBtn">
+									<span class="item-icon">🚪</span>
+									Sign Out
+								</button>
+							</div>
+						</div>
 					</div>
 				</header>
 
@@ -373,22 +410,7 @@
 			</main>
 		</div>
 
-		<script src="src/app.js"></script>
-		<script>
-			// Debug script to check if JS is working
-			console.log("Debug: HTML loaded, checking for elements...");
-			document.addEventListener("DOMContentLoaded", () => {
-				console.log("Debug: DOM Content Loaded");
-				const createBtn = document.getElementById("createDashboard");
-				console.log("Debug: Create button found:", createBtn);
-				if (createBtn) {
-					console.log("Debug: Adding click listener to create button");
-					createBtn.addEventListener("click", () => {
-						console.log("Debug: Create button clicked directly!");
-						alert("Create button works!");
-					});
-				}
-			});
-		</script>
+		<script src="../src/auth.js"></script>
+		<script src="../src/app.js"></script>
 	</body>
 </html>
