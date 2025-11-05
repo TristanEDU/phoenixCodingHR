@@ -278,6 +278,26 @@ class PhoenixHRApp {
 				this.handleLogout();
 			});
 		}
+
+		// Account Settings button
+		const accountSettingsBtn = document.getElementById("accountSettingsBtn");
+		if (accountSettingsBtn) {
+			accountSettingsBtn.addEventListener("click", (e) => {
+				e.preventDefault();
+				this.closeUserMenu();
+				this.showAccountSettingsModal();
+			});
+		}
+
+		// Preferences button
+		const preferencesBtn = document.getElementById("preferencesBtn");
+		if (preferencesBtn) {
+			preferencesBtn.addEventListener("click", (e) => {
+				e.preventDefault();
+				this.closeUserMenu();
+				this.showPreferencesModal();
+			});
+		}
 	}
 
 	toggleUserMenu() {
@@ -672,6 +692,471 @@ class PhoenixHRApp {
 			this.currentModal.remove();
 			this.currentModal = null;
 		}
+	}
+
+	// Account Settings Modal
+	showAccountSettingsModal() {
+		// Remove any existing modals
+		this.closeModal();
+
+		// Get current user info
+		const user = window.authSystem?.getCurrentUser();
+
+		// Create modal
+		const modal = document.createElement("div");
+		modal.className = "modal-overlay";
+		modal.innerHTML = `
+			<div class="modal-content account-settings-modal">
+				<div class="modal-header">
+					<h2>Account Settings</h2>
+					<button class="modal-close" aria-label="Close modal">&times;</button>
+				</div>
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>Profile Information</h3>
+						<form class="settings-form" id="profileForm">
+							<div class="form-row">
+								<div class="form-group">
+									<label for="fullName">Full Name</label>
+									<input type="text" id="fullName" name="fullName" value="${
+										user?.name || ""
+									}" required>
+								</div>
+								<div class="form-group">
+									<label for="email">Email Address</label>
+									<input type="email" id="email" name="email" value="${
+										user?.email || ""
+									}" readonly>
+									<small class="form-help">Email cannot be changed for security reasons</small>
+								</div>
+							</div>
+							<div class="form-row">
+								<div class="form-group">
+									<label for="role">Role</label>
+									<input type="text" id="role" name="role" value="${user?.role || ""}" readonly>
+								</div>
+								<div class="form-group">
+									<label for="department">Department</label>
+									<input type="text" id="department" name="department" value="${
+										user?.department || ""
+									}" readonly>
+								</div>
+							</div>
+						</form>
+					</div>
+
+					<div class="settings-section">
+						<h3>Security</h3>
+						<form class="settings-form" id="securityForm">
+							<div class="form-group">
+								<label for="currentPassword">Current Password</label>
+								<input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password">
+							</div>
+							<div class="form-row">
+								<div class="form-group">
+									<label for="newPassword">New Password</label>
+									<input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+								</div>
+								<div class="form-group">
+									<label for="confirmPassword">Confirm Password</label>
+									<input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="checkbox-label">
+									<input type="checkbox" id="enableTwoFactor" name="enableTwoFactor">
+									<span class="checkbox-custom"></span>
+									Enable Two-Factor Authentication (Coming Soon)
+								</label>
+							</div>
+						</form>
+					</div>
+
+					<div class="settings-section">
+						<h3>Account Actions</h3>
+						<div class="action-buttons">
+							<button class="btn btn-outline" id="exportDataBtn">
+								<span class="btn-icon">📥</span>
+								Export My Data
+							</button>
+							<button class="btn btn-danger" id="deleteAccountBtn">
+								<span class="btn-icon">🗑️</span>
+								Delete Account
+							</button>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
+					<button class="btn btn-primary" id="saveSettingsBtn">Save Changes</button>
+				</div>
+			</div>
+		`;
+
+		// Add to DOM
+		document.body.appendChild(modal);
+		this.currentModal = modal;
+
+		// Bind events
+		const closeBtn = modal.querySelector(".modal-close");
+		const cancelBtn = modal.querySelector("#cancelSettingsBtn");
+		const saveBtn = modal.querySelector("#saveSettingsBtn");
+		const exportBtn = modal.querySelector("#exportDataBtn");
+		const deleteBtn = modal.querySelector("#deleteAccountBtn");
+
+		closeBtn.addEventListener("click", () => this.closeModal());
+		cancelBtn.addEventListener("click", () => this.closeModal());
+
+		saveBtn.addEventListener("click", () => {
+			this.saveAccountSettings();
+		});
+
+		exportBtn.addEventListener("click", () => {
+			this.exportUserData();
+		});
+
+		deleteBtn.addEventListener("click", () => {
+			this.handleDeleteAccount();
+		});
+
+		// Close on overlay click
+		modal.addEventListener("click", (e) => {
+			if (e.target === modal) {
+				this.closeModal();
+			}
+		});
+	}
+
+	// Preferences Modal
+	showPreferencesModal() {
+		// Remove any existing modals
+		this.closeModal();
+
+		// Create modal
+		const modal = document.createElement("div");
+		modal.className = "modal-overlay";
+		modal.innerHTML = `
+			<div class="modal-content preferences-modal">
+				<div class="modal-header">
+					<h2>Preferences</h2>
+					<button class="modal-close" aria-label="Close modal">&times;</button>
+				</div>
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>Appearance</h3>
+						<div class="preference-group">
+							<label>Theme</label>
+							<div class="radio-group">
+								<label class="radio-label">
+									<input type="radio" name="theme" value="dark" checked>
+									<span class="radio-custom"></span>
+									Dark Mode
+								</label>
+								<label class="radio-label">
+									<input type="radio" name="theme" value="light">
+									<span class="radio-custom"></span>
+									Light Mode
+								</label>
+								<label class="radio-label">
+									<input type="radio" name="theme" value="auto">
+									<span class="radio-custom"></span>
+									System Default
+								</label>
+							</div>
+						</div>
+						<div class="preference-group">
+							<label>Sidebar</label>
+							<label class="checkbox-label">
+								<input type="checkbox" id="collapseSidebar" name="collapseSidebar">
+								<span class="checkbox-custom"></span>
+								Start with collapsed sidebar
+							</label>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>Notifications</h3>
+						<div class="preference-group">
+							<label class="checkbox-label">
+								<input type="checkbox" id="emailNotifications" name="emailNotifications" checked>
+								<span class="checkbox-custom"></span>
+								Email notifications
+							</label>
+							<label class="checkbox-label">
+								<input type="checkbox" id="pushNotifications" name="pushNotifications" checked>
+								<span class="checkbox-custom"></span>
+								Browser notifications
+							</label>
+							<label class="checkbox-label">
+								<input type="checkbox" id="taskReminders" name="taskReminders" checked>
+								<span class="checkbox-custom"></span>
+								Task due date reminders
+							</label>
+							<label class="checkbox-label">
+								<input type="checkbox" id="weeklyReports" name="weeklyReports">
+								<span class="checkbox-custom"></span>
+								Weekly activity reports
+							</label>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>Productivity</h3>
+						<div class="preference-group">
+							<label for="defaultView">Default Dashboard View</label>
+							<select id="defaultView" name="defaultView" class="form-select">
+								<option value="dashboard">Overview Dashboard</option>
+								<option value="projects">HR Projects</option>
+								<option value="tasks">Task List</option>
+								<option value="people">People Directory</option>
+							</select>
+						</div>
+						<div class="preference-group">
+							<label for="workingHours">Working Hours</label>
+							<div class="time-range">
+								<select id="startTime" name="startTime" class="form-select">
+									<option value="08:00">8:00 AM</option>
+									<option value="09:00" selected>9:00 AM</option>
+									<option value="10:00">10:00 AM</option>
+								</select>
+								<span class="time-separator">to</span>
+								<select id="endTime" name="endTime" class="form-select">
+									<option value="16:00">4:00 PM</option>
+									<option value="17:00" selected>5:00 PM</option>
+									<option value="18:00">6:00 PM</option>
+								</select>
+							</div>
+						</div>
+						<div class="preference-group">
+							<label class="checkbox-label">
+								<input type="checkbox" id="autoSave" name="autoSave" checked>
+								<span class="checkbox-custom"></span>
+								Auto-save draft changes
+							</label>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>Language & Region</h3>
+						<div class="preference-group">
+							<label for="language">Language</label>
+							<select id="language" name="language" class="form-select">
+								<option value="en" selected>English (US)</option>
+								<option value="en-gb">English (UK)</option>
+								<option value="es">Español</option>
+								<option value="fr">Français</option>
+								<option value="de">Deutsch</option>
+							</select>
+						</div>
+						<div class="preference-group">
+							<label for="timezone">Timezone</label>
+							<select id="timezone" name="timezone" class="form-select">
+								<option value="America/New_York">Eastern Time (ET)</option>
+								<option value="America/Chicago">Central Time (CT)</option>
+								<option value="America/Denver">Mountain Time (MT)</option>
+								<option value="America/Los_Angeles" selected>Pacific Time (PT)</option>
+								<option value="UTC">UTC</option>
+							</select>
+						</div>
+						<div class="preference-group">
+							<label for="dateFormat">Date Format</label>
+							<select id="dateFormat" name="dateFormat" class="form-select">
+								<option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+								<option value="DD/MM/YYYY">DD/MM/YYYY</option>
+								<option value="YYYY-MM-DD">YYYY-MM-DD</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-secondary" id="cancelPreferencesBtn">Cancel</button>
+					<button class="btn btn-outline" id="resetPreferencesBtn">Reset to Defaults</button>
+					<button class="btn btn-primary" id="savePreferencesBtn">Save Preferences</button>
+				</div>
+			</div>
+		`;
+
+		// Add to DOM
+		document.body.appendChild(modal);
+		this.currentModal = modal;
+
+		// Bind events
+		const closeBtn = modal.querySelector(".modal-close");
+		const cancelBtn = modal.querySelector("#cancelPreferencesBtn");
+		const resetBtn = modal.querySelector("#resetPreferencesBtn");
+		const saveBtn = modal.querySelector("#savePreferencesBtn");
+
+		closeBtn.addEventListener("click", () => this.closeModal());
+		cancelBtn.addEventListener("click", () => this.closeModal());
+
+		resetBtn.addEventListener("click", () => {
+			this.resetPreferences();
+		});
+
+		saveBtn.addEventListener("click", () => {
+			this.savePreferences();
+		});
+
+		// Close on overlay click
+		modal.addEventListener("click", (e) => {
+			if (e.target === modal) {
+				this.closeModal();
+			}
+		});
+	}
+
+	// Account Settings Actions
+	saveAccountSettings() {
+		const profileForm = document.getElementById("profileForm");
+		const securityForm = document.getElementById("securityForm");
+
+		const profileData = new FormData(profileForm);
+		const securityData = new FormData(securityForm);
+
+		// Update profile information
+		const newName = profileData.get("fullName");
+		if (newName && newName.trim()) {
+			// Here you would typically send to backend
+			console.log("Updating profile:", { name: newName });
+			this.showNotification("Profile updated successfully!", "success");
+		}
+
+		// Handle password change
+		const currentPassword = securityData.get("currentPassword");
+		const newPassword = securityData.get("newPassword");
+		const confirmPassword = securityData.get("confirmPassword");
+
+		if (currentPassword && newPassword && confirmPassword) {
+			if (newPassword !== confirmPassword) {
+				this.showNotification("Passwords don't match!", "error");
+				return;
+			}
+			if (newPassword.length < 6) {
+				this.showNotification(
+					"Password must be at least 6 characters!",
+					"error"
+				);
+				return;
+			}
+			// Here you would typically verify current password and update
+			console.log("Password change requested");
+			this.showNotification("Password updated successfully!", "success");
+		}
+
+		this.closeModal();
+	}
+
+	exportUserData() {
+		// Create mock data export
+		const userData = {
+			profile: window.authSystem?.getCurrentUser(),
+			dashboards: this.dashboards,
+			preferences: JSON.parse(
+				localStorage.getItem("phoenix-hr-preferences") || "{}"
+			),
+			exportDate: new Date().toISOString(),
+		};
+
+		const dataStr = JSON.stringify(userData, null, 2);
+		const dataBlob = new Blob([dataStr], { type: "application/json" });
+
+		const link = document.createElement("a");
+		link.href = URL.createObjectURL(dataBlob);
+		link.download = `phoenix-hr-data-${
+			new Date().toISOString().split("T")[0]
+		}.json`;
+		link.click();
+
+		this.showNotification("Data export completed!", "success");
+	}
+
+	handleDeleteAccount() {
+		const confirmed = confirm(
+			"Are you sure you want to delete your account?\n\nThis action cannot be undone and will permanently remove all your data."
+		);
+
+		if (confirmed) {
+			const doubleConfirm = prompt(
+				"To confirm account deletion, please type 'DELETE' in capital letters:"
+			);
+
+			if (doubleConfirm === "DELETE") {
+				// Here you would typically send delete request to backend
+				alert(
+					"Account deletion requested. You will be contacted by an administrator to complete the process."
+				);
+				console.log(
+					"Account deletion requested for user:",
+					window.authSystem?.getCurrentUser()?.email
+				);
+			} else {
+				this.showNotification("Account deletion cancelled.", "info");
+			}
+		}
+	}
+
+	// Preferences Actions
+	savePreferences() {
+		const modal = this.currentModal;
+		const formData = new FormData();
+
+		// Collect all form inputs
+		const inputs = modal.querySelectorAll("input, select");
+		inputs.forEach((input) => {
+			if (input.type === "checkbox" || input.type === "radio") {
+				if (input.checked) {
+					formData.append(input.name, input.value || "true");
+				}
+			} else {
+				formData.append(input.name, input.value);
+			}
+		});
+
+		// Convert to object
+		const preferences = {};
+		for (let [key, value] of formData.entries()) {
+			preferences[key] = value;
+		}
+
+		// Save to localStorage
+		localStorage.setItem("phoenix-hr-preferences", JSON.stringify(preferences));
+
+		console.log("Preferences saved:", preferences);
+		this.showNotification("Preferences saved successfully!", "success");
+		this.closeModal();
+
+		// Apply some preferences immediately
+		this.applyPreferences(preferences);
+	}
+
+	resetPreferences() {
+		if (confirm("Reset all preferences to default values?")) {
+			localStorage.removeItem("phoenix-hr-preferences");
+			this.showNotification("Preferences reset to defaults!", "info");
+			this.closeModal();
+			// Reopen modal to show defaults
+			setTimeout(() => this.showPreferencesModal(), 100);
+		}
+	}
+
+	applyPreferences(preferences) {
+		// Apply theme
+		if (preferences.theme) {
+			document.body.className = document.body.className.replace(
+				/theme-\w+/g,
+				""
+			);
+			if (preferences.theme !== "auto") {
+				document.body.classList.add(`theme-${preferences.theme}`);
+			}
+		}
+
+		// Apply sidebar preference
+		if (preferences.collapseSidebar === "true") {
+			this.collapseSidebar();
+		}
+
+		console.log("Applied preferences:", preferences);
 	}
 
 	// Helper methods for dashboard management
