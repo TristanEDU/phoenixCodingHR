@@ -5,7 +5,6 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Sign In - The Study Hall</title>
 		<link rel="stylesheet" href="../designs/style.css/style.css" />
-		<script src="../src/auth.js" defer></script>
 	</head>
 	<body class="login-body">
 		<div class="login-container">
@@ -102,6 +101,10 @@
 			</div>
 		</div>
 
-		<script src="src/auth.js"></script>
+		<script type="module">
+			import { authSystem } from "../src/auth.js";
+			// Make authSystem globally available for backward compatibility
+			window.authSystem = authSystem;
+		</script>
 	</body>
 </html>

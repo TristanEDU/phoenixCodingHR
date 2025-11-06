@@ -1,44 +1,96 @@
 // The Study Hall Authentication System
 // Handles login, logout, and session management
 
-class AuthSystem {
+export class AuthSystem {
 	constructor() {
 		this.authorizedUsers = [
 			{
+				id: "EMP001",
 				email: "t3sserak@proton.me",
 				password: "Password",
 				name: "Russ",
+				firstName: "Russ",
+				lastName: "",
 				role: "SpongeLord",
-				department: "HR Director",
+				position: "Chief Executive Officer",
+				department: "Executive",
+				managerId: null,
+				directReports: ["EMP002", "EMP003", "EMP004"],
+				startDate: "2023-01-01",
+				status: "active",
+				phone: "+1-555-0001",
+				location: "Main Office",
+				permissions: ["admin", "hr", "finance", "operations"],
+				lastLogin: null,
 			},
 			{
+				id: "EMP002",
 				email: "admin@studyhall.com",
 				password: "study2025!",
 				name: "Admin User",
+				firstName: "Admin",
+				lastName: "User",
 				role: "HR Manager",
+				position: "Human Resources Manager",
 				department: "Human Resources",
+				managerId: "EMP001",
+				directReports: ["EMP003"],
+				startDate: "2023-02-15",
+				status: "active",
+				phone: "+1-555-0002",
+				location: "Main Office",
+				permissions: ["hr", "admin", "users"],
+				lastLogin: null,
 			},
 			{
+				id: "EMP003",
 				email: "hr@studyhall.com",
 				password: "hr123secure",
 				name: "Sarah Johnson",
+				firstName: "Sarah",
+				lastName: "Johnson",
 				role: "HR Specialist",
+				position: "HR Business Partner",
 				department: "Human Resources",
+				managerId: "EMP002",
+				directReports: [],
+				startDate: "2023-03-01",
+				status: "active",
+				phone: "+1-555-0003",
+				location: "Main Office",
+				permissions: ["hr", "users"],
+				lastLogin: null,
 			},
 			{
+				id: "EMP004",
 				email: "manager@studyhall.com",
 				password: "mgr456pass",
 				name: "Mike Chen",
+				firstName: "Mike",
+				lastName: "Chen",
 				role: "Department Manager",
+				position: "Operations Manager",
 				department: "Operations",
+				managerId: "EMP001",
+				directReports: [],
+				startDate: "2023-01-15",
+				status: "active",
+				phone: "+1-555-0004",
+				location: "Operations Floor",
+				permissions: ["operations", "users"],
+				lastLogin: null,
 			},
 		];
 
 		this.sessionKey = "study-hall-session";
+		this.failedAttempts = this.loadFailedAttempts();
 		this.init();
 	}
 
 	init() {
+		// Load any saved user data
+		this.loadUserData();
+
 		// Check if we're on the login page
 		if (document.getElementById("loginForm")) {
 			this.initLoginPage();
@@ -82,7 +134,7 @@ class AuthSystem {
 
 		// Check if user is already logged in
 		if (this.isAuthenticated()) {
-			window.location.href = "pages/app.html";
+			window.location.href = "app.html";
 		}
 	}
 
@@ -97,6 +149,15 @@ class AuthSystem {
 
 		// Clear previous errors
 		this.clearAllErrors();
+
+		// Check if account is locked
+		if (this.isAccountLocked(credentials.email)) {
+			this.showFieldError(
+				"email",
+				"Account temporarily locked due to too many failed attempts. Please try again in 15 minutes."
+			);
+			return;
+		}
 
 		// Validate input
 		if (!this.validateInput(credentials)) {
@@ -113,7 +174,8 @@ class AuthSystem {
 		const user = this.authenticateUser(credentials);
 
 		if (user) {
-			// Success - create session
+			// Success - clear failed attempts and create session
+			this.clearFailedAttempts(credentials.email);
 			this.createSession(user, credentials.rememberMe);
 
 			// Show success and redirect
@@ -122,7 +184,8 @@ class AuthSystem {
 				window.location.href = "app.html";
 			}, 1000);
 		} else {
-			// Failed authentication
+			// Failed authentication - record attempt
+			this.recordFailedAttempt(credentials.email);
 			this.setLoadingState(false);
 			this.showLoginError();
 		}
@@ -163,10 +226,17 @@ class AuthSystem {
 	createSession(user, rememberMe) {
 		const session = {
 			user: {
+				id: user.id,
 				email: user.email,
 				name: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
 				role: user.role,
+				position: user.position,
 				department: user.department,
+				managerId: user.managerId,
+				permissions: user.permissions,
+				location: user.location,
 			},
 			loginTime: new Date().toISOString(),
 			rememberMe: rememberMe,
@@ -174,6 +244,10 @@ class AuthSystem {
 				? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
 				: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours
 		};
+
+		// Update last login time
+		user.lastLogin = new Date().toISOString();
+		this.saveUserData();
 
 		localStorage.setItem(this.sessionKey, JSON.stringify(session));
 		console.log("Session created for:", user.name);
@@ -342,12 +416,142 @@ class AuthSystem {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return emailRegex.test(email);
 	}
+
+	// Security and user management methods
+	loadFailedAttempts() {
+		try {
+			const attempts = localStorage.getItem("study-hall-failed-attempts");
+			return attempts ? JSON.parse(attempts) : {};
+		} catch (error) {
+			return {};
+		}
+	}
+
+	saveFailedAttempts() {
+		localStorage.setItem(
+			"study-hall-failed-attempts",
+			JSON.stringify(this.failedAttempts)
+		);
+	}
+
+	isAccountLocked(email) {
+		const attempts = this.failedAttempts[email];
+		if (!attempts) return false;
+
+		const now = new Date().getTime();
+		const lockoutTime = 15 * 60 * 1000; // 15 minutes
+
+		if (attempts.count >= 5 && now - attempts.lastAttempt < lockoutTime) {
+			return true;
+		}
+
+		// Reset if lockout period has passed
+		if (attempts.count >= 5 && now - attempts.lastAttempt >= lockoutTime) {
+			delete this.failedAttempts[email];
+			this.saveFailedAttempts();
+		}
+
+		return false;
+	}
+
+	recordFailedAttempt(email) {
+		if (!this.failedAttempts[email]) {
+			this.failedAttempts[email] = { count: 0, lastAttempt: 0 };
+		}
+
+		this.failedAttempts[email].count++;
+		this.failedAttempts[email].lastAttempt = new Date().getTime();
+		this.saveFailedAttempts();
+	}
+
+	clearFailedAttempts(email) {
+		delete this.failedAttempts[email];
+		this.saveFailedAttempts();
+	}
+
+	saveUserData() {
+		localStorage.setItem(
+			"study-hall-users",
+			JSON.stringify(this.authorizedUsers)
+		);
+	}
+
+	loadUserData() {
+		try {
+			const saved = localStorage.getItem("study-hall-users");
+			if (saved) {
+				this.authorizedUsers = JSON.parse(saved);
+			}
+		} catch (error) {
+			console.warn("Failed to load user data:", error);
+		}
+	}
+
+	// Permission checking methods
+	hasPermission(permission) {
+		const user = this.getCurrentUser();
+		if (!user || !user.permissions) return false;
+
+		return (
+			user.permissions.includes(permission) ||
+			user.permissions.includes("admin")
+		);
+	}
+
+	canAccessAdminPanel() {
+		return this.hasPermission("admin");
+	}
+
+	canManageUsers() {
+		return this.hasPermission("hr") || this.hasPermission("admin");
+	}
+
+	canViewReports() {
+		return (
+			this.hasPermission("hr") ||
+			this.hasPermission("admin") ||
+			this.hasPermission("operations")
+		);
+	}
+
+	// Hierarchy methods
+	getDirectReports(userId = null) {
+		const currentUserId = userId || this.getCurrentUser()?.id;
+		if (!currentUserId) return [];
+
+		const user = this.authorizedUsers.find((u) => u.id === currentUserId);
+		if (!user) return [];
+
+		return this.authorizedUsers.filter((u) =>
+			user.directReports.includes(u.id)
+		);
+	}
+
+	getManager(userId = null) {
+		const currentUserId = userId || this.getCurrentUser()?.id;
+		if (!currentUserId) return null;
+
+		const user = this.authorizedUsers.find((u) => u.id === currentUserId);
+		if (!user || !user.managerId) return null;
+
+		return this.authorizedUsers.find((u) => u.id === user.managerId);
+	}
+
+	getAllSubordinates(userId = null) {
+		const currentUserId = userId || this.getCurrentUser()?.id;
+		if (!currentUserId) return [];
+
+		let subordinates = [];
+		const directReports = this.getDirectReports(currentUserId);
+
+		directReports.forEach((report) => {
+			subordinates.push(report);
+			subordinates = subordinates.concat(this.getAllSubordinates(report.id));
+		});
+
+		return subordinates;
+	}
 }
 
-// Initialize authentication system
-document.addEventListener("DOMContentLoaded", () => {
-	window.authSystem = new AuthSystem();
-});
-
-// Export for use in other files
-window.AuthSystem = AuthSystem;
+// Create and export a singleton instance
+export const authSystem = new AuthSystem();

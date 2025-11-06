@@ -1,7 +1,21 @@
 // The Study Hall App - Main Application Logic
 // Handles routing, navigation, and app state management
 
-class StudyHallApp {
+import { authSystem } from "./auth.js";
+import { UserManager } from "./userManager.js";
+import { PermissionsManager } from "./permissionsManager.js";
+import { HierarchyManager } from "./hierarchyManager.js";
+import { DocumentManager } from "./documentManager.js";
+import { DocumentUIManager } from "./documentUIManager.js";
+import { TaskManager } from "./taskManager.js";
+import { TaskUIManager } from "./taskUIManager.js";
+import { AdminUIManager } from "./adminUIManager.js";
+import { ModalComponent } from "./components/ModalComponent.js";
+import { NotificationComponent } from "./components/NotificationComponent.js";
+import { ViewManagerComponent } from "./components/ViewManagerComponent.js";
+import { NavigationComponent } from "./components/NavigationComponent.js";
+
+export class StudyHallApp {
 	constructor() {
 		this.currentView = "dashboard";
 		this.sidebarCollapsed = false;
@@ -12,14 +26,47 @@ class StudyHallApp {
 			spaces: true,
 		};
 
+		// Initialize management systems with proper dependency injection
+		this.authSystem = authSystem;
+
+		// Initialize managers with proper dependencies
+		this.userManager = new UserManager(this.authSystem);
+		this.permissionsManager = new PermissionsManager(this.authSystem);
+		this.hierarchyManager = new HierarchyManager(
+			this.authSystem,
+			this.userManager
+		);
+		this.documentManager = new DocumentManager(
+			this.authSystem,
+			this.permissionsManager
+		);
+
+		// Initialize task management system
+		this.taskManager = new TaskManager(
+			this.authSystem,
+			this.userManager,
+			this.permissionsManager
+		);
+
+		// UI managers will be initialized after DOM is ready
+		this.documentUIManager = null;
+		this.taskUIManager = null;
+		this.adminUIManager = null;
+
+		// Initialize ViewManagerComponent for routing
+		this.viewManager = null;
+
+		// Initialize NavigationComponent for sidebar management
+		this.navigationManager = null;
+
 		// Load dashboards from localStorage or use defaults
 		this.dashboards = this.loadDashboards();
 
-		// Task management
+		// Legacy task management (will be replaced by TaskManager)
 		this.tasks = this.loadTasks();
 		this.taskIdCounter = this.getNextTaskId();
 
-		// Documentation management
+		// Legacy documentation management (will be replaced by DocumentManager)
 		this.documents = this.loadDocuments();
 		this.policies = this.loadPolicies();
 		this.trainings = this.loadTrainings();
@@ -182,7 +229,7 @@ class StudyHallApp {
 	}
 
 	generateDailyStats() {
-		const currentUser = window.authSystem?.getCurrentUser();
+		const currentUser = this.authSystem?.getCurrentUser();
 		const today = new Date().toISOString().split("T")[0];
 
 		// Get user's tasks
@@ -491,7 +538,7 @@ class StudyHallApp {
 
 	// Dashboard rendering methods
 	renderMyTasks() {
-		const currentUser = window.authSystem?.getCurrentUser();
+		const currentUser = this.authSystem?.getCurrentUser();
 		const container = document.getElementById("myTasksContainer");
 
 		if (!container || !currentUser) return;
@@ -563,7 +610,7 @@ class StudyHallApp {
 	}
 
 	renderUpcomingMeetings() {
-		const currentUser = window.authSystem?.getCurrentUser();
+		const currentUser = this.authSystem?.getCurrentUser();
 		const container = document.getElementById("meetingsContainer");
 
 		if (!container || !currentUser) return;
@@ -645,10 +692,24 @@ class StudyHallApp {
 	}
 
 	renderDashboard() {
-		// Render all dashboard components
-		this.renderMyTasks();
-		this.renderUpcomingMeetings();
-		this.renderDailyStats();
+		try {
+			console.log("Rendering dashboard components...");
+
+			// Render all dashboard components
+			console.log("- Rendering my tasks...");
+			this.renderMyTasks();
+
+			console.log("- Rendering upcoming meetings...");
+			this.renderUpcomingMeetings();
+
+			console.log("- Rendering daily stats...");
+			this.renderDailyStats();
+
+			console.log("Dashboard rendered successfully!");
+		} catch (error) {
+			console.error("Error rendering dashboard:", error);
+			console.error("Error stack:", error.stack);
+		}
 	}
 
 	// Documentation rendering methods
@@ -1027,52 +1088,64 @@ class StudyHallApp {
 	init() {
 		console.log("StudyHallApp initializing...");
 
-		// Initialize authentication and user info
-		this.initializeUser();
+		try {
+			// Initialize authentication and user info
+			console.log("1. Initializing user...");
+			this.initializeUser();
 
-		this.bindEvents();
-		this.handleInitialRoute();
-		this.updatePageTitle();
-		this.initializeSectionStates();
-		this.initializeSavedDashboards();
+			// Initialize document management UI
+			console.log("2. Initializing document manager...");
+			this.initializeDocumentManager();
 
-		// Render the dashboard when app initializes
-		this.renderDashboard();
+			// Initialize task management UI
+			console.log("3. Initializing task manager...");
+			this.initializeTaskManager();
 
-		console.log("StudyHallApp initialized successfully!");
+			// Initialize ViewManagerComponent for routing
+			console.log("4. Initializing view manager...");
+			this.initializeViewManager();
+
+			// Initialize NavigationComponent for sidebar management
+			console.log("5. Initializing navigation manager...");
+			this.initializeNavigationManager();
+
+			console.log("6. Binding events...");
+			this.bindEvents();
+
+			console.log("7. Handling initial route...");
+			this.handleInitialRoute();
+
+			console.log("8. Updating page title...");
+			this.updatePageTitle();
+
+			console.log("9. Initializing section states...");
+			this.initializeSectionStates();
+
+			console.log("10. Initializing saved dashboards...");
+			this.initializeSavedDashboards();
+
+			// Render the dashboard when app initializes
+			console.log("11. Rendering dashboard...");
+			this.renderDashboard();
+
+			console.log("StudyHallApp initialized successfully!");
+		} catch (error) {
+			console.error("Error during StudyHallApp initialization:", error);
+			console.error("Error stack:", error.stack);
+
+			// Try to render dashboard anyway
+			try {
+				console.log("Attempting fallback dashboard render...");
+				this.renderDashboard();
+			} catch (dashboardError) {
+				console.error("Dashboard render also failed:", dashboardError);
+			}
+		}
 	}
 
 	bindEvents() {
-		// Sidebar navigation
-		const navItems = document.querySelectorAll(".nav-item");
-		navItems.forEach((item) => {
-			item.addEventListener("click", (e) => {
-				e.preventDefault();
-				const view = item.dataset.view;
-				this.navigateToView(view);
-			});
-		});
-
-		// Sidebar toggle
-		const sidebarToggle = document.getElementById("sidebarToggle");
-		const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-
-		if (sidebarToggle) {
-			sidebarToggle.addEventListener("click", () => this.toggleSidebar());
-		}
-
-		if (mobileMenuBtn) {
-			mobileMenuBtn.addEventListener("click", () => this.toggleSidebar());
-		}
-
-		// Section toggles
-		const sectionToggles = document.querySelectorAll(".section-toggle");
-		sectionToggles.forEach((toggle) => {
-			toggle.addEventListener("click", (e) => {
-				const section = toggle.dataset.section;
-				this.toggleSection(section);
-			});
-		});
+		// Note: Sidebar navigation is now handled by NavigationComponent
+		// Note: Sidebar toggle and section toggles are now handled by NavigationComponent
 
 		// Create dashboard button
 		const createDashboard = document.getElementById("createDashboard");
@@ -1193,27 +1266,268 @@ class StudyHallApp {
 
 	// Authentication and User Management Methods
 	initializeUser() {
-		if (!window.authSystem) {
-			console.error("AuthSystem not available");
-			return;
-		}
-
 		// Check if user is authenticated
-		if (!window.authSystem.isAuthenticated()) {
+		if (!this.authSystem.isAuthenticated()) {
 			console.log("User not authenticated, redirecting to login");
 			window.location.href = "login.html";
 			return;
 		}
 
 		// Get current user and update UI
-		const user = window.authSystem.getCurrentUser();
+		const user = this.authSystem.getCurrentUser();
 		if (user) {
 			this.updateUserInterface(user);
 			this.bindUserMenuEvents();
 			this.applyRoleBasedVisibility(user);
+
+			// Initialize admin UI manager for admin users
+			if (
+				this.permissionsManager.hasPermission("admin") ||
+				user.role === "SpongeLord"
+			) {
+				try {
+					this.adminUIManager = new AdminUIManager(
+						this.authSystem,
+						this.userManager,
+						this.permissionsManager,
+						this.hierarchyManager
+					);
+
+					// Make admin UI globally accessible for onclick handlers
+					window.adminUI = this.adminUIManager;
+					console.log("Admin UI Manager initialized for:", user.name);
+				} catch (error) {
+					console.error("Failed to initialize AdminUIManager:", error);
+					this.adminUIManager = null;
+				}
+			}
 		}
 
 		console.log("User initialized:", user?.name);
+	}
+
+	initializeDocumentManager() {
+		// Set the app reference for the document manager
+		this.documentManager.setApp(this);
+
+		// Initialize Document UI Manager
+		this.documentUIManager = new DocumentUIManager(this.documentManager, this);
+		// Make document UI globally accessible for onclick handlers
+		window.documentUIManager = this.documentUIManager;
+		console.log("Document Manager and UI initialized");
+	}
+
+	initializeTaskManager() {
+		// Initialize Task UI Manager
+		this.taskUIManager = new TaskUIManager(
+			this.taskManager,
+			this.authSystem,
+			this.userManager
+		);
+		// Make task UI globally accessible for onclick handlers
+		window.taskUIManager = this.taskUIManager;
+		console.log("Task Manager and UI initialized");
+	}
+
+	initializeViewManager() {
+		try {
+			// Initialize ViewManagerComponent with routes and view-specific logic
+			this.viewManager = new ViewManagerComponent({
+				container: "#contentArea",
+				defaultView: "dashboard",
+				transition: "fade",
+				transitionDuration: 200,
+				onViewChange: (newView, oldView) => {
+					// Permission checks before view change
+					if (!this.permissionsManager.canAccessFeature(newView)) {
+						this.showNotification(
+							"Access denied. You don't have permission to access this feature.",
+							"error"
+						);
+						return false; // Cancel navigation
+					}
+
+					// Additional admin view checks
+					const adminViews = ["roles", "users", "audit", "settings"];
+					if (
+						adminViews.includes(newView) &&
+						!this.permissionsManager.hasPermission("admin")
+					) {
+						this.showNotification(
+							"Access denied. Administrator privileges required.",
+							"error"
+						);
+						return false; // Cancel navigation
+					}
+
+					return true; // Allow navigation
+				},
+				onViewLoad: (viewName) => {
+					// Handle view-specific rendering after view is shown
+					this.handleViewSpecificLogic(viewName);
+					this.updatePageTitle(viewName);
+				},
+			});
+
+			console.log("ViewManager initialized");
+		} catch (error) {
+			console.error("Failed to initialize ViewManager:", error);
+			console.warn("App will continue without ViewManager");
+		}
+	}
+
+	// Initialize NavigationComponent for sidebar management
+	initializeNavigationManager() {
+		try {
+			this.navigationManager = new NavigationComponent({
+				container: "#sidebar",
+				sections: ["favorites", "dashboards", "documentation", "spaces"],
+				initialStates: this.sectionStates,
+				onNavigate: (view) => {
+					// Delegate to ViewManager for navigation
+					if (this.viewManager) {
+						this.viewManager.navigate(view);
+					} else {
+						// Fallback to legacy navigation
+						this.navigateToView(view);
+					}
+				},
+				onSectionToggle: (sectionName, isExpanded) => {
+					// Update app section states
+					this.sectionStates[sectionName] = isExpanded;
+					this.saveSectionStates();
+				},
+				onAddDashboard: () => {
+					this.showAddDashboardModal();
+				},
+				onAddSpace: () => {
+					this.showAddSpaceModal();
+				},
+				onItemOptions: (itemId, itemType, event) => {
+					this.handleNavigationItemOptions(itemId, itemType, event);
+				},
+			});
+
+			console.log("NavigationManager initialized");
+		} catch (error) {
+			console.error("Failed to initialize NavigationManager:", error);
+			console.warn("App will continue without NavigationManager");
+		}
+	}
+
+	handleViewSpecificLogic(viewName) {
+		// Handle view-specific rendering
+		if (viewName === "tasks") {
+			this.renderTasks();
+		} else if (viewName === "docs") {
+			// Use enhanced document management
+			if (this.documentUIManager) {
+				this.documentUIManager.enhanceDocumentsView();
+			} else {
+				// Fallback to legacy system
+				this.renderDocuments();
+				// Set up category click handlers
+				document.querySelectorAll(".docs-category").forEach((category) => {
+					category.addEventListener("click", () => {
+						const categoryType = category.dataset.category;
+						this.filterDocuments(categoryType);
+					});
+				});
+			}
+		} else if (viewName === "policies") {
+			this.renderPolicies();
+		} else if (viewName === "training") {
+			this.renderTrainings();
+		} else if (viewName === "templates") {
+			this.renderTemplates();
+		} else if (viewName === "users" && this.adminUIManager) {
+			// Enhanced user management view
+			this.adminUIManager.enhanceUsersView();
+		}
+	}
+
+	// Handle navigation item options (dashboard/space options)
+	handleNavigationItemOptions(itemId, itemType, event) {
+		if (itemType === "dashboard") {
+			this.showDashboardOptions(itemId, event);
+		} else if (itemType === "space") {
+			this.showSpaceOptions(itemId, event);
+		}
+	}
+
+	// Show dashboard options menu
+	showDashboardOptions(dashboardId, event) {
+		// TODO: Implement dashboard options menu
+		console.log("Dashboard options for:", dashboardId);
+	}
+
+	// Show space options menu
+	showSpaceOptions(spaceId, event) {
+		// TODO: Implement space options menu
+		console.log("Space options for:", spaceId);
+	}
+
+	// Show add dashboard modal
+	showAddDashboardModal() {
+		ModalComponent.form({
+			title: "Add Dashboard",
+			fields: [
+				{ name: "name", label: "Dashboard Name", type: "text", required: true },
+				{ name: "icon", label: "Icon", type: "text", placeholder: "📊" },
+				{ name: "description", label: "Description", type: "textarea" },
+			],
+			onSubmit: (data) => {
+				this.addDashboard(data);
+			},
+		});
+	}
+
+	// Show add space modal
+	showAddSpaceModal() {
+		ModalComponent.form({
+			title: "Add Space",
+			fields: [
+				{ name: "name", label: "Space Name", type: "text", required: true },
+				{ name: "icon", label: "Icon", type: "text", placeholder: "🏢" },
+				{ name: "description", label: "Description", type: "textarea" },
+			],
+			onSubmit: (data) => {
+				this.addSpace(data);
+			},
+		});
+	}
+
+	// Add dashboard helper
+	addDashboard(dashboardData) {
+		const dashboard = {
+			id: `dashboard-${Date.now()}`,
+			name: dashboardData.name,
+			icon: dashboardData.icon || "📊",
+			description: dashboardData.description || "",
+		};
+
+		this.dashboards.push(dashboard);
+		this.saveDashboards();
+
+		// Add to navigation
+		if (this.navigationManager) {
+			this.navigationManager.addDashboard(dashboard);
+		}
+
+		NotificationComponent.show(
+			`Dashboard "${dashboard.name}" added successfully`,
+			"success"
+		);
+	}
+
+	// Add space helper
+	addSpace(spaceData) {
+		// TODO: Implement space management
+		console.log("Adding space:", spaceData);
+		NotificationComponent.show(
+			`Space "${spaceData.name}" added successfully`,
+			"success"
+		);
 	}
 
 	updateUserInterface(user) {
@@ -1306,12 +1620,7 @@ class StudyHallApp {
 	handleLogout() {
 		if (confirm("Are you sure you want to sign out?")) {
 			console.log("User logging out...");
-			if (window.authSystem) {
-				window.authSystem.logout();
-			} else {
-				// Fallback if authSystem not available
-				window.location.href = "login.html";
-			}
+			this.authSystem.logout();
 		}
 	}
 
@@ -1319,24 +1628,46 @@ class StudyHallApp {
 	applyRoleBasedVisibility(user) {
 		const adminSection = document.getElementById("adminSection");
 
-		// Define roles with admin access
-		const adminRoles = ["HR Manager", "Admin", "Administrator"];
-		const hasAdminAccess = adminRoles.includes(user.role);
+		// Use the new permissions manager to check admin access
+		const hasAdminAccess =
+			this.permissionsManager.hasPermission("admin") ||
+			this.permissionsManager.hasPermission("hr");
 
-		// Show/hide admin section based on role
+		// Show/hide admin section based on permissions
 		if (adminSection) {
 			if (hasAdminAccess) {
 				adminSection.style.display = "block";
-				console.log(`Admin section visible for role: ${user.role}`);
+				console.log(`Admin section visible for user: ${user.name}`);
 			} else {
 				adminSection.style.display = "none";
-				console.log(`Admin section hidden for role: ${user.role}`);
+				console.log(`Admin section hidden for user: ${user.name}`);
 			}
 		}
 
-		// Store user permissions for later use
-		this.userPermissions = this.getRolePermissions(user.role);
-		console.log("User permissions:", this.userPermissions);
+		// Update navigation based on available features
+		this.updateNavigationVisibility();
+
+		console.log("User permissions applied:", user.permissions);
+	}
+
+	updateNavigationVisibility() {
+		// Get available navigation items based on permissions
+		const availableNavItems = this.permissionsManager.getAvailableNavItems();
+
+		// Update sidebar navigation
+		const navItems = document.querySelectorAll(".nav-item[data-view]");
+		navItems.forEach((navItem) => {
+			const viewName = navItem.dataset.view;
+			const isAvailable = availableNavItems.some(
+				(item) => item.id === viewName
+			);
+
+			if (isAvailable) {
+				navItem.style.display = "flex";
+			} else {
+				navItem.style.display = "none";
+			}
+		});
 	}
 
 	getRolePermissions(role) {
@@ -1387,20 +1718,40 @@ class StudyHallApp {
 	}
 
 	hasPermission(permission) {
-		return this.userPermissions && this.userPermissions[permission] === true;
+		return this.permissionsManager.hasPermission(permission);
 	}
 
 	// Navigation with permission checking
 	navigateToView(viewName) {
-		// Check if user has permission to access admin views
-		const adminViews = ["roles", "users", "audit", "settings"];
+		// Delegate to ViewManagerComponent for unified routing
+		if (this.viewManager) {
+			this.viewManager.navigateToView(viewName);
+		} else {
+			// Fallback for initialization period
+			console.warn("ViewManager not initialized, using fallback navigation");
+			this.legacyNavigateToView(viewName);
+		}
+	}
 
+	legacyNavigateToView(viewName) {
+		// Legacy navigation logic (kept as fallback)
+		// Check if user has permission to access specific features
+		if (!this.permissionsManager.canAccessFeature(viewName)) {
+			this.showNotification(
+				"Access denied. You don't have permission to access this feature.",
+				"error"
+			);
+			return;
+		}
+
+		// Additional admin view checks
+		const adminViews = ["roles", "users", "audit", "settings"];
 		if (
 			adminViews.includes(viewName) &&
-			!this.hasPermission("canAccessAdminPanel")
+			!this.permissionsManager.hasPermission("admin")
 		) {
 			this.showNotification(
-				"Access denied. Insufficient permissions.",
+				"Access denied. Administrator privileges required.",
 				"error"
 			);
 			return;
@@ -1410,28 +1761,7 @@ class StudyHallApp {
 		this.showView(viewName);
 	}
 
-	toggleSection(sectionName) {
-		const sectionContent = document.querySelector(
-			`[data-section-content="${sectionName}"]`
-		);
-		const sectionToggle = document.querySelector(
-			`[data-section="${sectionName}"]`
-		);
-
-		if (sectionContent && sectionToggle) {
-			const isCurrentlyExpanded =
-				!sectionContent.classList.contains("collapsed");
-			this.sectionStates[sectionName] = !isCurrentlyExpanded;
-
-			if (isCurrentlyExpanded) {
-				sectionContent.classList.add("collapsed");
-				sectionToggle.classList.add("collapsed");
-			} else {
-				sectionContent.classList.remove("collapsed");
-				sectionToggle.classList.remove("collapsed");
-			}
-		}
-	}
+	// Note: toggleSection is now handled by NavigationComponent
 
 	createNewDashboard() {
 		console.log("createNewDashboard method called!");
@@ -1439,133 +1769,67 @@ class StudyHallApp {
 	}
 
 	showCreateDashboardModal() {
-		// Remove any existing modals
-		this.closeModal();
+		console.log("showCreateDashboardModal called");
 
-		// Create modal
-		const modal = document.createElement("div");
-		modal.className = "modal-overlay";
-		modal.innerHTML = `
-			<div class="modal-content">
-				<div class="modal-header">
-					<h2>Create New Dashboard</h2>
-					<button class="modal-close" aria-label="Close modal">&times;</button>
-				</div>
-				<form class="dashboard-form" id="dashboardForm">
-					<div class="form-group">
-						<label for="dashboardName">Dashboard Name *</label>
-						<input 
-							type="text" 
-							id="dashboardName" 
-							name="name" 
-							placeholder="e.g., Team Performance, Q4 Metrics" 
-							required
-						>
-					</div>
-					
-					<div class="form-group">
-						<label for="dashboardDescription">Description</label>
-						<textarea 
-							id="dashboardDescription" 
-							name="description" 
-							placeholder="Brief description of what this dashboard will track..."
-							rows="3"
-						></textarea>
-					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="dashboardIcon">Icon</label>
-							<select id="dashboardIcon" name="icon">
-								<option value="📊">📊 Charts</option>
-								<option value="📈">📈 Analytics</option>
-								<option value="📋">📋 Tasks</option>
-								<option value="👥">👥 People</option>
-								<option value="💼">💼 Business</option>
-								<option value="🎯">🎯 Goals</option>
-								<option value="⚡">⚡ Performance</option>
-								<option value="🔍">🔍 Insights</option>
-								<option value="💰">💰 Finance</option>
-								<option value="📅">📅 Calendar</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label for="dashboardTemplate">Template</label>
-							<select id="dashboardTemplate" name="template">
-								<option value="blank">Blank Dashboard</option>
-								<option value="analytics">Analytics Template</option>
-								<option value="team">Team Management</option>
-								<option value="project">Project Overview</option>
-								<option value="hr">HR Metrics</option>
-							</select>
-						</div>
-					</div>
-					
-					<div class="form-actions">
-						<button type="button" class="btn btn-secondary" id="cancelDashboard">Cancel</button>
-						<button type="submit" class="btn btn-primary">Create Dashboard</button>
-					</div>
-				</form>
-			</div>
-		`;
+		// Create form fields for the dashboard
+		const formFields = [
+			{
+				type: "text",
+				name: "name",
+				label: "Dashboard Name *",
+				placeholder: "e.g., Team Performance, Q4 Metrics",
+				required: true,
+			},
+			{
+				type: "textarea",
+				name: "description",
+				label: "Description",
+				placeholder: "Brief description of what this dashboard will track...",
+				rows: 3,
+			},
+			{
+				type: "select",
+				name: "icon",
+				label: "Icon",
+				options: [
+					{ value: "📊", text: "📊 Charts" },
+					{ value: "📈", text: "📈 Analytics" },
+					{ value: "📋", text: "📋 Tasks" },
+					{ value: "👥", text: "👥 People" },
+					{ value: "💼", text: "💼 Business" },
+					{ value: "🎯", text: "🎯 Goals" },
+					{ value: "⚡", text: "⚡ Performance" },
+					{ value: "🔍", text: "🔍 Insights" },
+					{ value: "💰", text: "💰 Finance" },
+					{ value: "📅", text: "📅 Calendar" },
+				],
+			},
+			{
+				type: "select",
+				name: "template",
+				label: "Template",
+				options: [
+					{ value: "blank", text: "Blank Dashboard" },
+					{ value: "analytics", text: "Analytics Template" },
+					{ value: "team", text: "Team Management" },
+					{ value: "project", text: "Project Overview" },
+					{ value: "hr", text: "HR Metrics" },
+				],
+			},
+		];
 
-		// Add to page
-		document.body.appendChild(modal);
-
-		// Focus first input
-		setTimeout(() => {
-			document.getElementById("dashboardName").focus();
-		}, 100);
-
-		// Bind events
-		this.bindModalEvents(modal);
-
-		// Store reference
-		this.currentModal = modal;
+		ModalComponent.form("Create New Dashboard", formFields, (formData) => {
+			this.handleDashboardCreation(formData);
+		});
 	}
 
-	bindModalEvents(modal) {
-		// Close button
-		const closeBtn = modal.querySelector(".modal-close");
-		closeBtn.addEventListener("click", () => this.closeModal());
-
-		// Cancel button
-		const cancelBtn = modal.querySelector("#cancelDashboard");
-		cancelBtn.addEventListener("click", () => this.closeModal());
-
-		// Close on overlay click
-		modal.addEventListener("click", (e) => {
-			if (e.target === modal) {
-				this.closeModal();
-			}
-		});
-
-		// Form submission
-		const form = modal.querySelector("#dashboardForm");
-		form.addEventListener("submit", (e) => {
-			e.preventDefault();
-			this.handleDashboardCreation(form);
-		});
-
-		// Escape key to close
-		const handleEscape = (e) => {
-			if (e.key === "Escape") {
-				this.closeModal();
-				document.removeEventListener("keydown", handleEscape);
-			}
-		};
-		document.addEventListener("keydown", handleEscape);
-	}
-
-	handleDashboardCreation(form) {
-		const formData = new FormData(form);
+	handleDashboardCreation(formData) {
 		const dashboardData = {
 			id: `dashboard-${Date.now()}`,
-			name: formData.get("name").trim(),
-			description: formData.get("description").trim(),
-			icon: formData.get("icon"),
-			template: formData.get("template"),
+			name: formData.name ? formData.name.trim() : "",
+			description: formData.description ? formData.description.trim() : "",
+			icon: formData.icon || "📊",
+			template: formData.template || "blank",
 			createdAt: new Date().toISOString(),
 			widgets: [],
 		};
@@ -1579,11 +1843,10 @@ class StudyHallApp {
 		// Create the dashboard
 		this.createDashboard(dashboardData);
 
-		// Close modal
-		this.closeModal();
-
 		// Navigate to new dashboard
 		this.navigateToView(dashboardData.id);
+
+		this.showNotification("Dashboard created successfully!", "success");
 	}
 
 	createDashboard(dashboardData) {
@@ -1771,321 +2034,287 @@ class StudyHallApp {
 	}
 
 	closeModal() {
-		if (this.currentModal) {
-			this.currentModal.remove();
-			this.currentModal = null;
-		}
+		console.log("closeModal called - delegating to ModalComponent");
+		ModalComponent.closeAll();
+		this.currentModal = null;
 	}
 
 	// Account Settings Modal
 	showAccountSettingsModal() {
-		// Remove any existing modals
-		this.closeModal();
-
 		// Get current user info
-		const user = window.authSystem?.getCurrentUser();
+		const user = this.authSystem?.getCurrentUser();
 
-		// Create modal
-		const modal = document.createElement("div");
-		modal.className = "modal-overlay";
-		modal.innerHTML = `
-			<div class="modal-content account-settings-modal">
-				<div class="modal-header">
-					<h2>Account Settings</h2>
-					<button class="modal-close" aria-label="Close modal">&times;</button>
-				</div>
-				<div class="modal-body">
-					<div class="settings-section">
-						<h3>Profile Information</h3>
-						<form class="settings-form" id="profileForm">
-							<div class="form-row">
-								<div class="form-group">
-									<label for="fullName">Full Name</label>
-									<input type="text" id="fullName" name="fullName" value="${
-										user?.name || ""
-									}" required>
-								</div>
-								<div class="form-group">
-									<label for="email">Email Address</label>
-									<input type="email" id="email" name="email" value="${
-										user?.email || ""
-									}" readonly>
-									<small class="form-help">Email cannot be changed for security reasons</small>
-								</div>
-							</div>
-							<div class="form-row">
-								<div class="form-group">
-									<label for="role">Role</label>
-									<input type="text" id="role" name="role" value="${user?.role || ""}" readonly>
-								</div>
-								<div class="form-group">
-									<label for="department">Department</label>
-									<input type="text" id="department" name="department" value="${
-										user?.department || ""
-									}" readonly>
-								</div>
-							</div>
-						</form>
-					</div>
-
-					<div class="settings-section">
-						<h3>Security</h3>
-						<form class="settings-form" id="securityForm">
-							<div class="form-group">
-								<label for="currentPassword">Current Password</label>
-								<input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password">
-							</div>
-							<div class="form-row">
-								<div class="form-group">
-									<label for="newPassword">New Password</label>
-									<input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
-								</div>
-								<div class="form-group">
-									<label for="confirmPassword">Confirm Password</label>
-									<input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
-								</div>
-							</div>
-							<div class="form-group">
-								<label class="checkbox-label">
-									<input type="checkbox" id="enableTwoFactor" name="enableTwoFactor">
-									<span class="checkbox-custom"></span>
-									Enable Two-Factor Authentication (Coming Soon)
-								</label>
-							</div>
-						</form>
-					</div>
-
-					<div class="settings-section">
-						<h3>Account Actions</h3>
-						<div class="action-buttons">
-							<button class="btn btn-outline" id="exportDataBtn">
-								<span class="btn-icon">📥</span>
-								Export My Data
-							</button>
-							<button class="btn btn-danger" id="deleteAccountBtn">
-								<span class="btn-icon">🗑️</span>
-								Delete Account
-							</button>
+		// Create form sections
+		const profileSection = `
+			<div class="settings-section">
+				<h3>Profile Information</h3>
+				<form class="settings-form" id="profileForm">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="fullName">Full Name</label>
+							<input type="text" id="fullName" name="fullName" value="${
+								user?.name || ""
+							}" required>
+						</div>
+						<div class="form-group">
+							<label for="email">Email Address</label>
+							<input type="email" id="email" name="email" value="${
+								user?.email || ""
+							}" readonly>
+							<small class="form-help">Email cannot be changed for security reasons</small>
 						</div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
-					<button class="btn btn-primary" id="saveSettingsBtn">Save Changes</button>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="role">Role</label>
+							<input type="text" id="role" name="role" value="${user?.role || ""}" readonly>
+						</div>
+						<div class="form-group">
+							<label for="department">Department</label>
+							<input type="text" id="department" name="department" value="${
+								user?.department || ""
+							}" readonly>
+						</div>
+					</div>
+				</form>
+			</div>
+
+			<div class="settings-section">
+				<h3>Security</h3>
+				<form class="settings-form" id="securityForm">
+					<div class="form-group">
+						<label for="currentPassword">Current Password</label>
+						<input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password">
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="newPassword">New Password</label>
+							<input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+						</div>
+						<div class="form-group">
+							<label for="confirmPassword">Confirm Password</label>
+							<input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" id="enableTwoFactor" name="enableTwoFactor">
+							<span class="checkbox-custom"></span>
+							Enable Two-Factor Authentication (Coming Soon)
+						</label>
+					</div>
+				</form>
+			</div>
+
+			<div class="settings-section">
+				<h3>Account Actions</h3>
+				<div class="action-buttons">
+					<button class="btn btn-outline" id="exportDataBtn">
+						<span class="btn-icon">📥</span>
+						Export My Data
+					</button>
+					<button class="btn btn-danger" id="deleteAccountBtn">
+						<span class="btn-icon">🗑️</span>
+						Delete Account
+					</button>
 				</div>
 			</div>
 		`;
 
-		// Add to DOM
-		document.body.appendChild(modal);
-		this.currentModal = modal;
-
-		// Bind events
-		const closeBtn = modal.querySelector(".modal-close");
-		const cancelBtn = modal.querySelector("#cancelSettingsBtn");
-		const saveBtn = modal.querySelector("#saveSettingsBtn");
-		const exportBtn = modal.querySelector("#exportDataBtn");
-		const deleteBtn = modal.querySelector("#deleteAccountBtn");
-
-		closeBtn.addEventListener("click", () => this.closeModal());
-		cancelBtn.addEventListener("click", () => this.closeModal());
-
-		saveBtn.addEventListener("click", () => {
-			this.saveAccountSettings();
-		});
-
-		exportBtn.addEventListener("click", () => {
-			this.exportUserData();
-		});
-
-		deleteBtn.addEventListener("click", () => {
-			this.handleDeleteAccount();
-		});
-
-		// Close on overlay click
-		modal.addEventListener("click", (e) => {
-			if (e.target === modal) {
-				this.closeModal();
+		// Create modal with custom buttons
+		const modal = ModalComponent.show(
+			"Account Settings",
+			profileSection,
+			"account-settings-modal",
+			{
+				size: "large",
+				buttons: [
+					{
+						text: "Cancel",
+						className: "btn-secondary",
+						action: () => ModalComponent.closeAll(),
+					},
+					{
+						text: "Save Changes",
+						className: "btn-primary",
+						action: () => this.saveAccountSettings(),
+					},
+				],
 			}
-		});
+		);
+
+		// Add custom event handlers after modal is shown
+		setTimeout(() => {
+			const exportBtn = document.getElementById("exportDataBtn");
+			const deleteBtn = document.getElementById("deleteAccountBtn");
+
+			if (exportBtn) {
+				exportBtn.addEventListener("click", () => this.exportUserData());
+			}
+
+			if (deleteBtn) {
+				deleteBtn.addEventListener("click", () => this.handleDeleteAccount());
+			}
+		}, 100);
 	}
 
 	// Preferences Modal
 	showPreferencesModal() {
-		// Remove any existing modals
-		this.closeModal();
-
-		// Create modal
-		const modal = document.createElement("div");
-		modal.className = "modal-overlay";
-		modal.innerHTML = `
-			<div class="modal-content preferences-modal">
-				<div class="modal-header">
-					<h2>Preferences</h2>
-					<button class="modal-close" aria-label="Close modal">&times;</button>
-				</div>
-				<div class="modal-body">
-					<div class="settings-section">
-						<h3>Appearance</h3>
-						<div class="preference-group">
-							<label>Theme</label>
-							<div class="radio-group">
-								<label class="radio-label">
-									<input type="radio" name="theme" value="dark" checked>
-									<span class="radio-custom"></span>
-									Dark Mode
-								</label>
-								<label class="radio-label">
-									<input type="radio" name="theme" value="light">
-									<span class="radio-custom"></span>
-									Light Mode
-								</label>
-								<label class="radio-label">
-									<input type="radio" name="theme" value="auto">
-									<span class="radio-custom"></span>
-									System Default
-								</label>
-							</div>
-						</div>
-						<div class="preference-group">
-							<label>Sidebar</label>
-							<label class="checkbox-label">
-								<input type="checkbox" id="collapseSidebar" name="collapseSidebar">
-								<span class="checkbox-custom"></span>
-								Start with collapsed sidebar
-							</label>
-						</div>
-					</div>
-
-					<div class="settings-section">
-						<h3>Notifications</h3>
-						<div class="preference-group">
-							<label class="checkbox-label">
-								<input type="checkbox" id="emailNotifications" name="emailNotifications" checked>
-								<span class="checkbox-custom"></span>
-								Email notifications
-							</label>
-							<label class="checkbox-label">
-								<input type="checkbox" id="pushNotifications" name="pushNotifications" checked>
-								<span class="checkbox-custom"></span>
-								Browser notifications
-							</label>
-							<label class="checkbox-label">
-								<input type="checkbox" id="taskReminders" name="taskReminders" checked>
-								<span class="checkbox-custom"></span>
-								Task due date reminders
-							</label>
-							<label class="checkbox-label">
-								<input type="checkbox" id="weeklyReports" name="weeklyReports">
-								<span class="checkbox-custom"></span>
-								Weekly activity reports
-							</label>
-						</div>
-					</div>
-
-					<div class="settings-section">
-						<h3>Productivity</h3>
-						<div class="preference-group">
-							<label for="defaultView">Default Dashboard View</label>
-							<select id="defaultView" name="defaultView" class="form-select">
-								<option value="dashboard">Overview Dashboard</option>
-								<option value="projects">HR Projects</option>
-								<option value="tasks">Task List</option>
-								<option value="people">People Directory</option>
-							</select>
-						</div>
-						<div class="preference-group">
-							<label for="workingHours">Working Hours</label>
-							<div class="time-range">
-								<select id="startTime" name="startTime" class="form-select">
-									<option value="08:00">8:00 AM</option>
-									<option value="09:00" selected>9:00 AM</option>
-									<option value="10:00">10:00 AM</option>
-								</select>
-								<span class="time-separator">to</span>
-								<select id="endTime" name="endTime" class="form-select">
-									<option value="16:00">4:00 PM</option>
-									<option value="17:00" selected>5:00 PM</option>
-									<option value="18:00">6:00 PM</option>
-								</select>
-							</div>
-						</div>
-						<div class="preference-group">
-							<label class="checkbox-label">
-								<input type="checkbox" id="autoSave" name="autoSave" checked>
-								<span class="checkbox-custom"></span>
-								Auto-save draft changes
-							</label>
-						</div>
-					</div>
-
-					<div class="settings-section">
-						<h3>Language & Region</h3>
-						<div class="preference-group">
-							<label for="language">Language</label>
-							<select id="language" name="language" class="form-select">
-								<option value="en" selected>English (US)</option>
-								<option value="en-gb">English (UK)</option>
-								<option value="es">Español</option>
-								<option value="fr">Français</option>
-								<option value="de">Deutsch</option>
-							</select>
-						</div>
-						<div class="preference-group">
-							<label for="timezone">Timezone</label>
-							<select id="timezone" name="timezone" class="form-select">
-								<option value="America/New_York">Eastern Time (ET)</option>
-								<option value="America/Chicago">Central Time (CT)</option>
-								<option value="America/Denver">Mountain Time (MT)</option>
-								<option value="America/Los_Angeles" selected>Pacific Time (PT)</option>
-								<option value="UTC">UTC</option>
-							</select>
-						</div>
-						<div class="preference-group">
-							<label for="dateFormat">Date Format</label>
-							<select id="dateFormat" name="dateFormat" class="form-select">
-								<option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
-								<option value="DD/MM/YYYY">DD/MM/YYYY</option>
-								<option value="YYYY-MM-DD">YYYY-MM-DD</option>
-							</select>
-						</div>
+		// Create preferences content
+		const preferencesContent = `
+			<div class="settings-section">
+				<h3>Appearance</h3>
+				<div class="preference-group">
+					<label>Theme</label>
+					<div class="radio-group">
+						<label class="radio-label">
+							<input type="radio" name="theme" value="dark" checked>
+							<span class="radio-custom"></span>
+							Dark Mode
+						</label>
+						<label class="radio-label">
+							<input type="radio" name="theme" value="light">
+							<span class="radio-custom"></span>
+							Light Mode
+						</label>
+						<label class="radio-label">
+							<input type="radio" name="theme" value="auto">
+							<span class="radio-custom"></span>
+							System Default
+						</label>
 					</div>
 				</div>
-				<div class="modal-footer">
-					<button class="btn btn-secondary" id="cancelPreferencesBtn">Cancel</button>
-					<button class="btn btn-outline" id="resetPreferencesBtn">Reset to Defaults</button>
-					<button class="btn btn-primary" id="savePreferencesBtn">Save Preferences</button>
+				<div class="preference-group">
+					<label>Sidebar</label>
+					<label class="checkbox-label">
+						<input type="checkbox" id="collapseSidebar" name="collapseSidebar">
+						<span class="checkbox-custom"></span>
+						Start with collapsed sidebar
+					</label>
+				</div>
+			</div>
+
+			<div class="settings-section">
+				<h3>Notifications</h3>
+				<div class="preference-group">
+					<label class="checkbox-label">
+						<input type="checkbox" id="emailNotifications" name="emailNotifications" checked>
+						<span class="checkbox-custom"></span>
+						Email notifications
+					</label>
+					<label class="checkbox-label">
+						<input type="checkbox" id="pushNotifications" name="pushNotifications" checked>
+						<span class="checkbox-custom"></span>
+						Browser notifications
+					</label>
+					<label class="checkbox-label">
+						<input type="checkbox" id="taskReminders" name="taskReminders" checked>
+						<span class="checkbox-custom"></span>
+						Task due date reminders
+					</label>
+					<label class="checkbox-label">
+						<input type="checkbox" id="weeklyReports" name="weeklyReports">
+						<span class="checkbox-custom"></span>
+						Weekly activity reports
+					</label>
+				</div>
+			</div>
+
+			<div class="settings-section">
+				<h3>Productivity</h3>
+				<div class="preference-group">
+					<label for="defaultView">Default Dashboard View</label>
+					<select id="defaultView" name="defaultView" class="form-select">
+						<option value="dashboard">Overview Dashboard</option>
+						<option value="projects">HR Projects</option>
+						<option value="tasks">Task List</option>
+						<option value="people">People Directory</option>
+					</select>
+				</div>
+				<div class="preference-group">
+					<label for="workingHours">Working Hours</label>
+					<div class="time-range">
+						<select id="startTime" name="startTime" class="form-select">
+							<option value="08:00">8:00 AM</option>
+							<option value="09:00" selected>9:00 AM</option>
+							<option value="10:00">10:00 AM</option>
+						</select>
+						<span class="time-separator">to</span>
+						<select id="endTime" name="endTime" class="form-select">
+							<option value="16:00">4:00 PM</option>
+							<option value="17:00" selected>5:00 PM</option>
+							<option value="18:00">6:00 PM</option>
+						</select>
+					</div>
+				</div>
+				<div class="preference-group">
+					<label class="checkbox-label">
+						<input type="checkbox" id="autoSave" name="autoSave" checked>
+						<span class="checkbox-custom"></span>
+						Auto-save draft changes
+					</label>
+				</div>
+			</div>
+
+			<div class="settings-section">
+				<h3>Language & Region</h3>
+				<div class="preference-group">
+					<label for="language">Language</label>
+					<select id="language" name="language" class="form-select">
+						<option value="en" selected>English (US)</option>
+						<option value="en-gb">English (UK)</option>
+						<option value="es">Español</option>
+						<option value="fr">Français</option>
+						<option value="de">Deutsch</option>
+					</select>
+				</div>
+				<div class="preference-group">
+					<label for="timezone">Timezone</label>
+					<select id="timezone" name="timezone" class="form-select">
+						<option value="America/New_York">Eastern Time (ET)</option>
+						<option value="America/Chicago">Central Time (CT)</option>
+						<option value="America/Denver">Mountain Time (MT)</option>
+						<option value="America/Los_Angeles" selected>Pacific Time (PT)</option>
+						<option value="UTC">UTC</option>
+					</select>
+				</div>
+				<div class="preference-group">
+					<label for="dateFormat">Date Format</label>
+					<select id="dateFormat" name="dateFormat" class="form-select">
+						<option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+						<option value="DD/MM/YYYY">DD/MM/YYYY</option>
+						<option value="YYYY-MM-DD">YYYY-MM-DD</option>
+					</select>
 				</div>
 			</div>
 		`;
 
-		// Add to DOM
-		document.body.appendChild(modal);
-		this.currentModal = modal;
-
-		// Bind events
-		const closeBtn = modal.querySelector(".modal-close");
-		const cancelBtn = modal.querySelector("#cancelPreferencesBtn");
-		const resetBtn = modal.querySelector("#resetPreferencesBtn");
-		const saveBtn = modal.querySelector("#savePreferencesBtn");
-
-		closeBtn.addEventListener("click", () => this.closeModal());
-		cancelBtn.addEventListener("click", () => this.closeModal());
-
-		resetBtn.addEventListener("click", () => {
-			this.resetPreferences();
-		});
-
-		saveBtn.addEventListener("click", () => {
-			this.savePreferences();
-		});
-
-		// Close on overlay click
-		modal.addEventListener("click", (e) => {
-			if (e.target === modal) {
-				this.closeModal();
+		// Create modal with custom buttons
+		ModalComponent.show(
+			"Preferences",
+			preferencesContent,
+			"preferences-modal",
+			{
+				size: "large",
+				buttons: [
+					{
+						text: "Cancel",
+						className: "btn-secondary",
+						action: () => ModalComponent.closeAll(),
+					},
+					{
+						text: "Reset to Defaults",
+						className: "btn-outline",
+						action: () => this.resetPreferences(),
+					},
+					{
+						text: "Save Preferences",
+						className: "btn-primary",
+						action: () => this.savePreferences(),
+					},
+				],
 			}
-		});
+		);
 	}
 
 	// Account Settings Actions
@@ -2132,7 +2361,7 @@ class StudyHallApp {
 	exportUserData() {
 		// Create mock data export
 		const userData = {
-			profile: window.authSystem?.getCurrentUser(),
+			profile: this.authSystem?.getCurrentUser(),
 			dashboards: this.dashboards,
 			preferences: JSON.parse(
 				localStorage.getItem("study-hall-preferences") || "{}"
@@ -2170,7 +2399,7 @@ class StudyHallApp {
 				);
 				console.log(
 					"Account deletion requested for user:",
-					window.authSystem?.getCurrentUser()?.email
+					this.authSystem?.getCurrentUser()?.email
 				);
 			} else {
 				this.showNotification("Account deletion cancelled.", "info");
@@ -2480,9 +2709,7 @@ class StudyHallApp {
 		this.showNotification("Workspace menu (coming soon)", "info");
 	}
 
-	navigateToView(viewName) {
-		this.showView(viewName, true);
-	}
+	// Note: navigateToView method is now handled above (line 1734) - this duplicate was causing conflicts
 
 	showView(viewName, pushState = true) {
 		// Hide all views
@@ -2513,20 +2740,29 @@ class StudyHallApp {
 		if (viewName === "tasks") {
 			this.renderTasks();
 		} else if (viewName === "docs") {
-			this.renderDocuments();
-			// Set up category click handlers
-			document.querySelectorAll(".docs-category").forEach((category) => {
-				category.addEventListener("click", () => {
-					const categoryType = category.dataset.category;
-					this.filterDocuments(categoryType);
+			// Use enhanced document management
+			if (this.documentUIManager) {
+				this.documentUIManager.enhanceDocumentsView();
+			} else {
+				// Fallback to legacy system
+				this.renderDocuments();
+				// Set up category click handlers
+				document.querySelectorAll(".docs-category").forEach((category) => {
+					category.addEventListener("click", () => {
+						const categoryType = category.dataset.category;
+						this.filterDocuments(categoryType);
+					});
 				});
-			});
+			}
 		} else if (viewName === "policies") {
 			this.renderPolicies();
 		} else if (viewName === "training") {
 			this.renderTrainings();
 		} else if (viewName === "templates") {
 			this.renderTemplates();
+		} else if (viewName === "users" && this.adminUIManager) {
+			// Enhanced user management view
+			this.adminUIManager.enhanceUsersView();
 		}
 
 		// Update URL and browser history
@@ -2562,34 +2798,7 @@ class StudyHallApp {
 		document.title = `${titleMap[viewName] || "Dashboard"} - The Study Hall`;
 	}
 
-	toggleSidebar() {
-		const sidebar = document.getElementById("sidebar");
-		const mainContent = document.getElementById("mainContent");
-
-		if (this.sidebarCollapsed) {
-			this.expandSidebar();
-		} else {
-			this.collapseSidebar();
-		}
-	}
-
-	collapseSidebar() {
-		const sidebar = document.getElementById("sidebar");
-		const body = document.body;
-
-		sidebar.classList.add("collapsed");
-		body.classList.add("sidebar-collapsed");
-		this.sidebarCollapsed = true;
-	}
-
-	expandSidebar() {
-		const sidebar = document.getElementById("sidebar");
-		const body = document.body;
-
-		sidebar.classList.remove("collapsed");
-		body.classList.remove("sidebar-collapsed");
-		this.sidebarCollapsed = false;
-	}
+	// Note: toggleSidebar, collapseSidebar, expandSidebar are now handled by NavigationComponent
 
 	handleInitialRoute() {
 		// Check URL hash for initial route
@@ -2637,13 +2846,133 @@ class StudyHallApp {
 
 	// Task Management Methods
 	showTaskModal(taskId = null) {
-		const isEditing = taskId !== null;
-		const task = isEditing ? this.tasks.find((t) => t.id === taskId) : null;
+		console.log("showTaskModal called with taskId:", taskId);
+		console.log("Current app instance:", this);
 
-		// Get current user info
-		const currentUser = window.authSystem?.getCurrentUser();
+		// Use the new TaskUIManager if available
+		if (this.taskUIManager) {
+			this.taskUIManager.showTaskModal(taskId);
+			return;
+		}
 
-		// Get all users for assignment dropdown
+		// Fallback to legacy task modal using ModalComponent
+		try {
+			const isEditing = taskId !== null;
+			const task = isEditing ? this.tasks.find((t) => t.id === taskId) : null;
+
+			// Get current user info
+			const currentUser = this.authSystem?.getCurrentUser();
+			console.log("Current user:", currentUser);
+
+			// Get all users for assignment dropdown
+			const users = [
+				{ name: "Admin User", email: "admin@studyhall.com" },
+				{ name: "Sarah Johnson", email: "hr@studyhall.com" },
+				{ name: "Mike Chen", email: "manager@studyhall.com" },
+				{
+					name: currentUser?.name || "Current User",
+					email: currentUser?.email || "user@studyhall.com",
+				},
+			];
+
+			// Remove duplicates
+			const uniqueUsers = users.filter(
+				(user, index, self) =>
+					index === self.findIndex((u) => u.email === user.email)
+			);
+
+			// Use ModalComponent.form for better UX
+			ModalComponent.form({
+				title: isEditing ? "Edit Task" : "Create New Task",
+				fields: [
+					{
+						name: "title",
+						label: "Task Title",
+						type: "text",
+						required: true,
+						placeholder: "Enter task title...",
+						value: task?.title || "",
+					},
+					{
+						name: "description",
+						label: "Description",
+						type: "textarea",
+						placeholder: "Add task description...",
+						rows: 3,
+						value: task?.description || "",
+					},
+					{
+						name: "assignee",
+						label: "Assign To",
+						type: "select",
+						required: true,
+						options: [
+							{ value: "", label: "Select assignee..." },
+							...uniqueUsers.map((user) => ({
+								value: user.email,
+								label: user.name,
+								selected: task?.assigneeEmail === user.email,
+							})),
+						],
+					},
+					{
+						name: "dueDate",
+						label: "Due Date",
+						type: "date",
+						value: task?.dueDate || "",
+					},
+					{
+						name: "priority",
+						label: "Priority",
+						type: "select",
+						options: [
+							{
+								value: "low",
+								label: "Low",
+								selected: task?.priority === "low",
+							},
+							{
+								value: "medium",
+								label: "Medium",
+								selected: task?.priority === "medium",
+							},
+							{
+								value: "high",
+								label: "High",
+								selected: task?.priority === "high",
+							},
+						],
+					},
+					{
+						name: "category",
+						label: "Category",
+						type: "text",
+						placeholder: "e.g., HR, Operations, Development",
+						value: task?.category || "",
+					},
+				],
+				onSubmit: (formData) => {
+					if (isEditing) {
+						this.updateTaskFromData(formData, taskId);
+					} else {
+						this.createTaskFromData(formData);
+					}
+				},
+			});
+
+			console.log("Task modal created with ModalComponent successfully");
+		} catch (error) {
+			console.error("Error in showTaskModal:", error);
+			console.error("Error stack:", error.stack);
+		}
+	}
+
+	// Helper method for creating task from ModalComponent form data
+	createTaskFromData(formData) {
+		const currentUser = this.authSystem?.getCurrentUser();
+
+		// Find assignee name from email
+		const assigneeEmail = formData.assignee;
 		const users = [
 			{ name: "Admin User", email: "admin@studyhall.com" },
 			{ name: "Sarah Johnson", email: "hr@studyhall.com" },
@@ -2654,124 +2983,84 @@ class StudyHallApp {
 			},
 		];
 
-		// Remove duplicates
-		const uniqueUsers = users.filter(
-			(user, index, self) =>
-				index === self.findIndex((u) => u.email === user.email)
-		);
+		const assignee = users.find((user) => user.email === assigneeEmail);
+		const assigneeName = assignee ? assignee.name : assigneeEmail;
 
-		const modal = document.createElement("div");
-		modal.className = "modal-overlay";
-		modal.innerHTML = `
-			<div class="modal-content">
-				<div class="modal-header">
-					<h2>${isEditing ? "Edit Task" : "Create New Task"}</h2>
-					<button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-				</div>
-				<form class="task-form" onsubmit="event.preventDefault(); studyHallApp.${
-					isEditing ? "updateTask" : "createTask"
-				}(this, ${taskId || "null"})">
-					<div class="form-group">
-						<label for="taskTitle">Task Title *</label>
-						<input 
-							type="text" 
-							id="taskTitle" 
-							name="title" 
-							required 
-							placeholder="Enter task title..."
-							value="${task?.title || ""}"
-						>
-					</div>
-					
-					<div class="form-group">
-						<label for="taskDescription">Description</label>
-						<textarea 
-							id="taskDescription" 
-							name="description" 
-							placeholder="Add task description..."
-							rows="3"
-						>${task?.description || ""}</textarea>
-					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="taskAssignee">Assign To *</label>
-							<select id="taskAssignee" name="assignee" required>
-								<option value="">Select assignee...</option>
-								${uniqueUsers
-									.map(
-										(user) => `
-									<option value="${user.email}" ${
-											task?.assigneeEmail === user.email ? "selected" : ""
-										}>
-										${user.name}
-									</option>
-								`
-									)
-									.join("")}
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label for="taskDueDate">Due Date</label>
-							<input 
-								type="date" 
-								id="taskDueDate" 
-								name="dueDate"
-								value="${task?.dueDate || ""}"
-							>
-						</div>
-					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="taskPriority">Priority</label>
-							<select id="taskPriority" name="priority">
-								<option value="low" ${task?.priority === "low" ? "selected" : ""}>Low</option>
-								<option value="medium" ${
-									task?.priority === "medium" ? "selected" : ""
-								}>Medium</option>
-								<option value="high" ${
-									task?.priority === "high" ? "selected" : ""
-								}>High</option>
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label for="taskCategory">Category</label>
-							<input 
-								type="text" 
-								id="taskCategory" 
-								name="category" 
-								placeholder="e.g., HR, Operations, Development"
-								value="${task?.category || ""}"
-							>
-						</div>
-					</div>
-					
-					<div class="form-actions">
-						<button type="button" class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
-							Cancel
-						</button>
-						<button type="submit" class="btn btn-primary">
-							${isEditing ? "Update Task" : "Create Task"}
-						</button>
-					</div>
-				</form>
-			</div>
-		`;
+		const newTask = {
+			id: this.getNextTaskId(),
+			title: formData.title,
+			description: formData.description || "",
+			assignee: assigneeName,
+			assigneeEmail: assigneeEmail,
+			createdBy: currentUser?.name || "Current User",
+			createdByEmail: currentUser?.email || "user@studyhall.com",
+			dueDate: formData.dueDate || "",
+			priority: formData.priority || "medium",
+			category: formData.category || "",
+			status: "pending",
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		};
 
-		document.body.appendChild(modal);
+		this.tasks.push(newTask);
+		this.saveTasks();
+		this.renderTasks();
+		this.renderDashboard();
 
-		// Focus on title input
-		setTimeout(() => {
-			modal.querySelector("#taskTitle").focus();
-		}, 100);
+		this.showNotification("Task created successfully!", "success");
+		console.log("New task created:", newTask);
+	}
+
+	// Helper method for updating task from ModalComponent form data
+	updateTaskFromData(formData, taskId) {
+		const taskIndex = this.tasks.findIndex((t) => t.id === taskId);
+
+		if (taskIndex === -1) {
+			this.showNotification("Task not found!", "error");
+			return;
+		}
+
+		const currentUser = this.authSystem?.getCurrentUser();
+
+		// Find assignee name from email
+		const assigneeEmail = formData.assignee;
+		const users = [
+			{ name: "Admin User", email: "admin@studyhall.com" },
+			{ name: "Sarah Johnson", email: "hr@studyhall.com" },
+			{ name: "Mike Chen", email: "manager@studyhall.com" },
+			{
+				name: currentUser?.name || "Current User",
+				email: currentUser?.email || "user@studyhall.com",
+			},
+		];
+
+		const assignee = users.find((user) => user.email === assigneeEmail);
+		const assigneeName = assignee ? assignee.name : assigneeEmail;
+
+		// Update task
+		this.tasks[taskIndex] = {
+			...this.tasks[taskIndex],
+			title: formData.title,
+			description: formData.description || "",
+			assignee: assigneeName,
+			assigneeEmail: assigneeEmail,
+			dueDate: formData.dueDate || "",
+			priority: formData.priority || "medium",
+			category: formData.category || "",
+			updatedAt: new Date().toISOString(),
+		};
+
+		this.saveTasks();
+		this.renderTasks();
+		this.renderDashboard();
+
+		this.showNotification("Task updated successfully!", "success");
+		console.log("Task updated:", this.tasks[taskIndex]);
 	}
 
 	createTask(form, taskId) {
 		const formData = new FormData(form);
-		const currentUser = window.authSystem?.getCurrentUser();
+		const currentUser = this.authSystem?.getCurrentUser();
 
 		// Find assignee name from email
 		const assigneeEmail = formData.get("assignee");
@@ -2899,6 +3188,16 @@ class StudyHallApp {
 	}
 
 	renderTasks() {
+		const tasksView = document.getElementById("tasks-view");
+		if (!tasksView) return;
+
+		// Use the new TaskUIManager if available
+		if (this.taskUIManager) {
+			this.taskUIManager.renderTasksView();
+			return;
+		}
+
+		// Fallback to legacy task rendering
 		const tasksContainer = document.querySelector(".tasks-container");
 		if (!tasksContainer) return;
 
@@ -2951,43 +3250,42 @@ class StudyHallApp {
 	}
 
 	closeModal() {
-		const modal = document.querySelector(".modal-overlay");
-		if (modal) {
-			modal.remove();
-		}
+		console.log("closeModal called - delegating to ModalComponent");
+		ModalComponent.closeAll();
+		this.currentModal = null;
 	}
 
 	// Utility methods for future features
 	showNotification(message, type = "info") {
-		// Create notification system
-		const notification = document.createElement("div");
-		notification.className = `notification notification-${type}`;
-		notification.textContent = message;
-
-		// Add to page
-		document.body.appendChild(notification);
-
-		// Animate in
-		setTimeout(() => notification.classList.add("show"), 100);
-
-		// Remove after delay
-		setTimeout(() => {
-			notification.classList.remove("show");
-			setTimeout(() => notification.remove(), 300);
-		}, 3000);
+		// Delegate to the unified NotificationComponent
+		return NotificationComponent.show(message, type);
 	}
 
 	openModal(modalId) {
 		// Modal management
 		console.log(`Opening modal: ${modalId}`);
 	}
+
+	showCustomModal(title, content, modalClass = "custom-modal") {
+		// Use ModalComponent instead of legacy modal
+		return ModalComponent.show({
+			title: title,
+			content: content,
+			className: modalClass,
+		});
+	}
+
+	closeModal() {
+		console.log("closeModal called - delegating to ModalComponent");
+		ModalComponent.closeAll();
+		this.currentModal = null;
+	}
+
+	// Generic modal creation method for use by other managers
+	createModal(title, content, modalClass = "") {
+		console.log("createModal called with title:", title);
+		return ModalComponent.show(title, content, modalClass);
+	}
 }
 
-// Initialize app when DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
-	console.log("DOM Content Loaded - starting app initialization");
-	window.studyHallApp = new StudyHallApp();
-});
-
-// Remove export for non-module usage
-// export default StudyHallApp;
+// StudyHallApp class is already exported in the class declaration above

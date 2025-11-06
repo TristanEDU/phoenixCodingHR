@@ -5,6 +5,10 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>The Study Hall - Dashboard</title>
 		<link rel="stylesheet" href="../designs/style.css/style.css" />
+		<link rel="stylesheet" href="../designs/style.css/admin.css" />
+		<link rel="stylesheet" href="../designs/style.css/documents.css" />
+		<link rel="stylesheet" href="../src/components/modal.css" />
+		<link rel="stylesheet" href="../src/components/notification.css" />
 	</head>
 	<body class="app-body">
 		<!-- App Shell -->
@@ -435,124 +439,12 @@
 					</div>
 
 					<!-- Documentation Views (ITGlue Style) -->
+					<!-- Enhanced Documentation View -->
 					<div class="view docs-view" id="docs-view">
-						<div class="docs-layout">
-							<!-- Documentation Sidebar -->
-							<div class="docs-sidebar">
-								<div class="docs-search">
-									<input
-										type="text"
-										placeholder="Search documentation..."
-										class="docs-search-input"
-										id="docsSearchInput"
-									/>
-									<button class="docs-search-btn">🔍</button>
-								</div>
-
-								<div class="docs-categories" id="docsCategories">
-									<div class="docs-category active" data-category="all">
-										<div class="category-header">
-											<span class="category-icon">📚</span>
-											<span class="category-name">All Documents</span>
-											<span class="category-count">12</span>
-										</div>
-									</div>
-									<div class="docs-category" data-category="hr-policies">
-										<div class="category-header">
-											<span class="category-icon">📋</span>
-											<span class="category-name">HR Policies</span>
-											<span class="category-count">5</span>
-										</div>
-									</div>
-									<div class="docs-category" data-category="procedures">
-										<div class="category-header">
-											<span class="category-icon">⚙️</span>
-											<span class="category-name">Procedures</span>
-											<span class="category-count">4</span>
-										</div>
-									</div>
-									<div class="docs-category" data-category="training">
-										<div class="category-header">
-											<span class="category-icon">🎓</span>
-											<span class="category-name">Training</span>
-											<span class="category-count">3</span>
-										</div>
-									</div>
-									<div class="docs-category" data-category="templates">
-										<div class="category-header">
-											<span class="category-icon">📄</span>
-											<span class="category-name">Templates</span>
-											<span class="category-count">2</span>
-										</div>
-									</div>
-								</div>
-
-								<div class="docs-actions">
-									<button
-										class="btn btn-primary"
-										onclick="studyHallApp.showCreateDocumentModal()"
-									>
-										+ New Document
-									</button>
-								</div>
-							</div>
-
-							<!-- Documentation Content -->
-							<div class="docs-content">
-								<div class="docs-header">
-									<div class="docs-breadcrumb" id="docsBreadcrumb">
-										<span class="breadcrumb-item active">Knowledge Base</span>
-									</div>
-									<div class="docs-toolbar">
-										<button class="toolbar-btn" title="Grid view">⊞</button>
-										<button class="toolbar-btn active" title="List view">
-											☰
-										</button>
-										<button class="toolbar-btn" title="Sort">↕</button>
-									</div>
-								</div>
-
-								<div class="docs-list" id="docsList">
-									<!-- Documents will be rendered here -->
-									<div class="loading-placeholder">
-										Loading documentation...
-									</div>
-								</div>
-							</div>
-
-							<!-- Document Viewer -->
-							<div class="docs-viewer" id="docsViewer" style="display: none">
-								<div class="viewer-header">
-									<button
-										class="btn-back"
-										onclick="studyHallApp.closeDocumentViewer()"
-									>
-										← Back to list
-									</button>
-									<div class="viewer-actions">
-										<button
-											class="btn btn-sm"
-											onclick="studyHallApp.editDocument()"
-										>
-											Edit
-										</button>
-										<button
-											class="btn btn-sm"
-											onclick="studyHallApp.shareDocument()"
-										>
-											Share
-										</button>
-										<button
-											class="btn btn-sm"
-											onclick="studyHallApp.printDocument()"
-										>
-											Print
-										</button>
-									</div>
-								</div>
-								<div class="viewer-content" id="viewerContent">
-									<!-- Document content will be rendered here -->
-								</div>
+						<div class="view-content">
+							<!-- Enhanced UI will be populated by DocumentUIManager -->
+							<div class="loading-placeholder">
+								Loading enhanced document management system...
 							</div>
 						</div>
 					</div>
@@ -808,119 +700,17 @@
 					<!-- User Management View (Admin Only) -->
 					<div class="view users-view" id="users-view">
 						<div class="view-header">
-							<h3>User Management</h3>
-							<div class="view-controls">
-								<input
-									type="search"
-									placeholder="Search users..."
-									class="search-input"
-								/>
-								<select class="role-filter">
-									<option value="">All Roles</option>
-									<option value="hr-manager">HR Manager</option>
-									<option value="hr-specialist">HR Specialist</option>
-									<option value="dept-manager">Department Manager</option>
-									<option value="employee">Employee</option>
-								</select>
-								<button class="btn btn-primary" id="addUserBtn">
-									+ Add User
-								</button>
+							<h3>👥 User Management</h3>
+							<div class="admin-controls-placeholder">
+								<!-- Controls will be populated by AdminUIManager -->
 							</div>
 						</div>
 
 						<div class="users-table-container">
-							<table class="users-table">
-								<thead>
-									<tr>
-										<th>User</th>
-										<th>Role</th>
-										<th>Department</th>
-										<th>Status</th>
-										<th>Last Login</th>
-										<th>Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr class="user-row" data-user-id="admin">
-										<td class="user-cell">
-											<div class="user-avatar">👤</div>
-											<div class="user-details">
-												<div class="user-name">Admin User</div>
-												<div class="user-email">admin@studyhall.com</div>
-											</div>
-										</td>
-										<td>
-											<span class="role-badge admin">HR Manager</span>
-										</td>
-										<td>Human Resources</td>
-										<td>
-											<span class="status-badge active">Active</span>
-										</td>
-										<td>2 hours ago</td>
-										<td>
-											<button class="action-btn" title="Edit user">✏️</button>
-											<button class="action-btn" title="Reset password">
-												🔑
-											</button>
-											<button class="action-btn danger" title="Suspend user">
-												⏸️
-											</button>
-										</td>
-									</tr>
-									<tr class="user-row" data-user-id="sarah">
-										<td class="user-cell">
-											<div class="user-avatar">👤</div>
-											<div class="user-details">
-												<div class="user-name">Sarah Johnson</div>
-												<div class="user-email">hr@studyhall.com</div>
-											</div>
-										</td>
-										<td>
-											<span class="role-badge standard">HR Specialist</span>
-										</td>
-										<td>Human Resources</td>
-										<td>
-											<span class="status-badge active">Active</span>
-										</td>
-										<td>5 hours ago</td>
-										<td>
-											<button class="action-btn" title="Edit user">✏️</button>
-											<button class="action-btn" title="Reset password">
-												🔑
-											</button>
-											<button class="action-btn danger" title="Suspend user">
-												⏸️
-											</button>
-										</td>
-									</tr>
-									<tr class="user-row" data-user-id="mike">
-										<td class="user-cell">
-											<div class="user-avatar">👤</div>
-											<div class="user-details">
-												<div class="user-name">Mike Chen</div>
-												<div class="user-email">manager@studyhall.com</div>
-											</div>
-										</td>
-										<td>
-											<span class="role-badge limited">Department Manager</span>
-										</td>
-										<td>Operations</td>
-										<td>
-											<span class="status-badge active">Active</span>
-										</td>
-										<td>1 day ago</td>
-										<td>
-											<button class="action-btn" title="Edit user">✏️</button>
-											<button class="action-btn" title="Reset password">
-												🔑
-											</button>
-											<button class="action-btn danger" title="Suspend user">
-												⏸️
-											</button>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+							<!-- Enhanced table will be populated by AdminUIManager -->
+							<div class="admin-loading">
+								<div class="loading-spinner">Loading users...</div>
+							</div>
 						</div>
 					</div>
 
@@ -1086,7 +876,9 @@
 			</main>
 		</div>
 
-		<script src="../src/auth.js"></script>
-		<script src="../src/app.js"></script>
+		<script type="module" src="../src/main.js"></script>
+
+		<!-- Task Management Styles -->
+		<link rel="stylesheet" href="../src/tasks.css" />
 	</body>
 </html>
